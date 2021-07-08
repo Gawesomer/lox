@@ -60,6 +60,25 @@ class Lox:
 
 class Scanner:
 
+    keywords = {
+        "and": TokenType.AND,
+        "class": TokenType.CLASS,
+        "else": TokenType.ELSE,
+        "false": TokenType.FALSE,
+        "for": TokenType.FOR,
+        "fun": TokenType.FUN,
+        "if": TokenType.IF,
+        "nil": TokenType.NIL,
+        "or": TokenType.OR,
+        "print": TokenType.PRINT,
+        "return": TokenType.RETURN,
+        "super": TokenType.SUPER,
+        "this": TokenType.THIS,
+        "true": TokenType.TRUE,
+        "var": TokenType.VAR,
+        "while": TokenType.WHILE,
+    }
+
     def __init__(self, source: str):
         self.source = source
         self.tokens = []
@@ -125,6 +144,8 @@ class Scanner:
             self.string()
         elif c.isdigit():
             self.number()
+        elif c.isalpha():
+            self.identifier()
         else:
             Lox.error(self.line, "Unexpected character.")
 
@@ -194,6 +215,16 @@ class Scanner:
                 self.advance()
 
         self.add_token(TokenType.NUMBER, float(self.source[self.start:self.current]))
+
+
+    def identifier(self):
+        while self.peek().isalnum():
+            self.advance()
+
+        text = self.source[self.start:self.current]
+        token_type = self.keywords.get(text, TokenType.IDENTIFIER)
+
+        self.add_token(token_type)
 
 
 if __name__ == "__main__":
