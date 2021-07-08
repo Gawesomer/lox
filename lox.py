@@ -121,6 +121,8 @@ class Scanner:
             pass
         elif c == '\n':
             self.line += 1
+        elif c == '"':
+            self.string()
         else:
             Lox.error(self.line, "Unexpected character.")
 
@@ -151,6 +153,24 @@ class Scanner:
         if self.is_at_end():
             return '\0'
         return self.source[self.current]
+
+
+    def string(self):
+        while self.peek() != '"' and not self.is_at_end():
+            if self.peek() == '\n':
+                self.line += 1
+            self.advance()
+
+        if self.is_at_end():
+            Lox.error(self.line, "Unterminated string.")
+            return
+
+        # The closing ".
+        self.advance()
+
+        # Trim the surrounding quotes.
+        value = self.source[self.start+1:self.current-1]
+        self.add_token(TokenType.STRING, value)
 
 
 if __name__ == "__main__":
