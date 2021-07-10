@@ -129,12 +129,7 @@ class Scanner:
         elif c == '>':
             self.add_token(TokenType.GREATER_EQUAL if self.match('=') else TokenType.GREATER)
         elif c == '/':
-            if self.match('/'):
-                # A comment goes until the end of the line.
-                while self.peek() != '\n' and not self.is_at_end():
-                    self.advance()
-            else:
-                self.add_token(TokenType.SLASH)
+            self.comment()
         elif c in (' ', '\r', '\t'):
             # Ignore whitespace.
             pass
@@ -225,6 +220,28 @@ class Scanner:
         token_type = self.keywords.get(text, TokenType.IDENTIFIER)
 
         self.add_token(token_type)
+
+
+    def comment(self):
+        if self.match('/'):     # Line comment.
+            # A comment goes until the end of the line.
+            while self.peek() != '\n' and not self.is_at_end():
+                self.advance()
+        elif self.match('*'):   # Block comment.
+            while not (self.peek() == '*' and self.peek_next() == '/') and not self.is_at_end():
+                if self.peek() == '\n':
+                    self.line += 1
+                self.advance()
+
+            if self.is_at_end():
+                Lox.error(self.line, "Unterminated block comment.")
+                return
+
+            # Consume the "*/"
+            self.advance()
+            self.advance()
+        else:
+            self.add_token(TokenType.SLASH)
 
 
 if __name__ == "__main__":
