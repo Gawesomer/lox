@@ -36,12 +36,14 @@ class ASTPrinter(expr.Expr.Visitor):
 
 
 if __name__ == "__main__":
-        expression = expr.Binary(
-            expr.Unary(
-                Token(TokenType.MINUS, "-", None, 1),
-                expr.Literal(123)),
-            Token(TokenType.STAR, "*", None, 1),
-            expr.Grouping(
-                expr.Literal(45.67)))
+    # -123 * (45.67)
+    expression = expr.Binary(
+        expr.Unary(
+            Token(TokenType.MINUS, "-", None, 1),
+            expr.Literal(123)),
+        Token(TokenType.STAR, "*", None, 1),
+        expr.Grouping(
+            expr.Literal(45.67)))
 
-        print(ASTPrinter().print(expression))
+    # Expect "(* (- 123) (group 45.67))"
+    print(ASTPrinter().print(expression))
