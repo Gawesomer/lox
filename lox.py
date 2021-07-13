@@ -1,5 +1,7 @@
 import sys
 
+import expr
+from ast_printer import ASTPrinter
 from token import Token
 from token_type import TokenType
 
@@ -43,8 +45,18 @@ class Lox:
     def run(cls, source: str):
         scanner = Scanner(source)
         tokens = scanner.scan_tokens()
+        """
         for token in tokens:
             print(token)
+        """
+        parser = Parser(tokens)
+        expression = parser.parse()
+
+        # Stop if there was a syntax error.
+        if cls.had_error:
+            return
+
+        print(ASTPrinter().print(expression))
 
 
     @classmethod
@@ -56,6 +68,14 @@ class Lox:
     def report(cls, line: int, where: str, message: str):
         print("[line {}] Error{}: {}".format(line, where, message), file=sys.stderr)
         cls.had_error = True
+
+
+    @classmethod
+    def error_parser(cls, token: Token, message: str):
+        if token.type == TokenType.EOF:
+            cls.report(token.line, " at end", message)
+        else:
+            cls.report(token.line, " at '{}'".format(token.lexeme), message)
 
 
 class Scanner:
@@ -242,6 +262,177 @@ class Scanner:
             self.advance()
         else:
             self.add_token(TokenType.SLASH)
+
+
+class Parser:
+    """
+    Expression grammar:
+        expression     → equality ;
+        equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+        comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+        term           → factor ( ( "-" | "+" ) factor )* ;
+        factor         → unary ( ( "/" | "*" ) unary )* ;
+        unary          → ( "!" | "-" ) unary
+                       | primary ;
+        primary        → NUMBER | STRING | "true" | "false" | "nil"
+                       | "(" expression ")" ;
+    """
+
+    class ParseError(Exception):
+        pass
+
+    def __init__(self, tokens: list[Token]):
+        self.tokens = tokens
+        self.current = 0
+
+
+    def parse(self) -> expr.Expr:
+        try:
+            return self.expression()
+        except self.ParseError:
+            return None
+
+
+    def expression(self) -> expr.Expr:
+        return self.equality()
+
+
+    def equality(self) -> expr.Expr:
+        expression = self.comparison()
+
+        while self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
+            operator = self.previous()
+            right = self.comparison()
+            expression = expr.Binary(expression, operator, right)
+
+        return expression
+
+
+    def comparison(self) -> expr.Expr:
+        expression = self.term()
+
+        while self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
+            operator = self.previous()
+            right = self.term()
+            expression = expr.Binary(expression, operator, right)
+
+        return expression
+
+
+    def term(self) -> expr.Expr:
+        expression = self.factor()
+
+        while self.match(TokenType.MINUS, TokenType.PLUS):
+            operator = self.previous()
+            right = self.factor()
+            expression = expr.Binary(expression, operator, right)
+
+        return expression
+
+
+    def factor(self) -> expr.Expr:
+        expression = self.unary()
+
+        while self.match(TokenType.SLASH, TokenType.STAR):
+            operator = self.previous()
+            right = self.factor()
+            expression = expr.Binary(expression, operator, right)
+
+        return expression
+
+
+    def unary(self) -> expr.Expr:
+        if self.match(TokenType.BANG, TokenType.MINUS):
+            operator = self.previous()
+            right = self.unary()
+            return expr.Unary(operator, right)
+
+        return self.primary()
+
+
+    def primary(self) -> expr.Expr:
+        if self.match(TokenType.FALSE):
+            return expr.Literal(False)
+        if self.match(TokenType.TRUE):
+            return expr.Literal(True)
+        if self.match(TokenType.NIL):
+            return expr.Literal(None)
+
+        if self.match(TokenType.NUMBER, TokenType.STRING):
+            return expr.Literal(self.previous().literal)
+
+        if self.match(TokenType.LEFT_PAREN):
+            expression = self.expression()
+            self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
+            return expr.Grouping(expression)
+
+        raise self.error(self.peek(), "Expect expression.")
+
+
+    def match(self, *types) -> bool:
+        for type_ in types:
+            if self.check(type_):
+                self.advance()
+                return True
+
+        return False
+
+
+    def consume(self, token_type: TokenType, message: str) -> Token:
+        if self.check(token_type):
+            return self.advance()
+
+        raise self.error(self.peek(), message)
+
+
+    def check(self, token_type: TokenType) -> bool:
+        if self.is_at_end():
+            return False
+        return self.peek().type == token_type
+
+
+    def advance(self) -> Token:
+        if not self.is_at_end():
+            self.current += 1
+        return self.previous()
+
+
+    def is_at_end(self) -> bool:
+        return self.peek().type == TokenType.EOF
+
+
+    def peek(self) -> Token:
+        return self.tokens[self.current]
+
+
+    def previous(self) -> Token:
+        return self.tokens[self.current-1]
+
+
+    def error(self, token: Token, message: str) -> Exception:
+        Lox.error_parser(token, message)
+        return self.ParseError()
+
+
+    def synchronize(self):
+        self.advance()
+
+        while not self.is_at_end():
+            if self.previous().type == TokenType.SEMICOLON:
+                return
+
+            if self.peek().type in [
+                TokenType.CLASS,
+                TokenType.FUN,
+                TokenType.VAR,
+                TokenType.FOR,
+                TokenType.IF,
+                TokenType.WHILE,
+                TokenType.PRINT,
+                TokenType.RETURN]:
+                return
+
+            self.advance()
 
 
 if __name__ == "__main__":
