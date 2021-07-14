@@ -45,10 +45,8 @@ class Lox:
     def run(cls, source: str):
         scanner = Scanner(source)
         tokens = scanner.scan_tokens()
-        """
         for token in tokens:
             print(token)
-        """
         parser = Parser(tokens)
         expression = parser.parse()
 
@@ -267,7 +265,8 @@ class Scanner:
 class Parser:
     """
     Expression grammar:
-        expression     → equality ;
+        expression     → comma ;
+        comma          → equality ("," equality )* ;
         equality       → comparison ( ( "!=" | "==" ) comparison )* ;
         comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
         term           → factor ( ( "-" | "+" ) factor )* ;
@@ -294,7 +293,18 @@ class Parser:
 
 
     def expression(self) -> expr.Expr:
-        return self.equality()
+        return self.comma()
+
+
+    def comma(self) -> expr.Expr:
+        expression = self.equality()
+
+        while self.match(TokenType.COMMA):
+            operator = self.previous()
+            right = self.equality()
+            expression = expr.Binary(expression, operator, right)
+
+        return expression
 
 
     def equality(self) -> expr.Expr:
