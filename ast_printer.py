@@ -27,6 +27,10 @@ class ASTPrinter(expr.Expr.Visitor):
         return self.parenthesize(expr.operator.lexeme, expr.right)
 
 
+    def visit_ternary_expr(self, expr: expr.Ternary) -> str:
+        return self.parenthesize("ternary", expr.conditional, expr.truthy, expr.falsy)
+
+
     def parenthesize(self, name: str, *exprs) -> str:
         res = "({}".format(name)
         for expr in exprs:

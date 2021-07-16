@@ -138,6 +138,10 @@ class Scanner:
             self.add_token(TokenType.SEMICOLON)
         elif c == '*':
             self.add_token(TokenType.STAR)
+        elif c == '?':
+            self.add_token(TokenType.EROTEME)
+        elif c == ':':
+            self.add_token(TokenType.COLON)
         elif c == '!':
             self.add_token(TokenType.BANG_EQUAL if self.match('=') else TokenType.BANG)
         elif c == '=':
@@ -266,7 +270,8 @@ class Parser:
     """
     Expression grammar:
         expression     → comma ;
-        comma          → equality ("," equality )* ;
+        comma          → ternary ("," ternary )* ;
+        ternary        → equality ("?" equality ":" equality )* ;
         equality       → comparison ( ( "!=" | "==" ) comparison )* ;
         comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
         term           → factor ( ( "-" | "+" ) factor )* ;
@@ -297,14 +302,28 @@ class Parser:
 
 
     def comma(self) -> expr.Expr:
-        expression = self.equality()
+        expression = self.ternary()
 
         while self.match(TokenType.COMMA):
             operator = self.previous()
-            right = self.equality()
+            right = self.ternary()
             expression = expr.Binary(expression, operator, right)
 
         return expression
+
+
+    def ternary(self) -> expr.Expr:
+        expression = self.equality()
+
+        while self.check(TokenType.EROTEME) and self.check_next_next(TokenType.COLON):
+            self.advance()
+            truthy = self.equality()
+            self.advance()
+            falsy = self.equality()
+            expression = expr.Ternary(expression, truthy, falsy)
+
+        return expression
+
 
 
     def equality(self) -> expr.Expr:
@@ -399,6 +418,12 @@ class Parser:
         if self.is_at_end():
             return False
         return self.peek().type == token_type
+
+
+    def check_next_next(self, token_type: TokenType) -> bool:
+        if self.current+2 >= len(self.tokens):
+            return False
+        return self.tokens[self.current+2].type == token_type
 
 
     def advance(self) -> Token:
