@@ -269,12 +269,18 @@ class Scanner:
 class Parser:
     """
     Expression grammar:
-        expression     → comma ;
-        comma          → ternary ("," ternary )* ;
-        ternary        → equality ("?" equality ":" equality )* ;
-        equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-        comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-        term           → factor ( ( "-" | "+" ) factor )* ;
+        expression     → inv_comma ;
+        inv_comma      → "," comma ;
+        comma          → inv_ternary ("," inv_ternary )* ;
+        inv_ternary    → ( "?" | ":" ) ternary ;
+        ternary        → inv_equality ( "?" inv_equality ":" inv_equality )* ;
+        inv_equality   → ( "==" | "!=" ) equality ;
+        equality       → inv_comparison ( ( "!=" | "==" ) inv_comparison )* ;
+        inv_comparison → ( ">" | ">=" | "<" | "<=" ) comparison ;
+        comparison     → inv_term ( ( ">" | ">=" | "<" | "<=" ) inv_term )* ;
+        inv_term       → ( "-" | "+" ) term ;
+        term           → inv_factor ( ( "-" | "+" ) inv_factor )* ;
+        inv_factor     → ( "/" | "*" ) factory ;
         factor         → unary ( ( "/" | "*" ) unary )* ;
         unary          → ( "!" | "-" ) unary
                        | primary ;
@@ -298,65 +304,106 @@ class Parser:
 
 
     def expression(self) -> expr.Expr:
+        return self.inv_comma()
+
+
+    def inv_comma(self) -> expr.Expr:
+        if self.match(TokenType.COMMA):
+            invalid_expression = self.comma()
+
         return self.comma()
 
 
     def comma(self) -> expr.Expr:
-        expression = self.ternary()
+        expression = self.inv_ternary()
 
         while self.match(TokenType.COMMA):
             operator = self.previous()
-            right = self.ternary()
+            right = self.inv_ternary()
             expression = expr.Binary(expression, operator, right)
 
         return expression
 
 
+    def inv_ternary(self) -> expr.Expr:
+        if self.match(TokenType.EROTEME, TokenType.COLON):
+            invalid_expression = self.ternary()
+
+        return self.ternary()
+
+
     def ternary(self) -> expr.Expr:
-        expression = self.equality()
+        expression = self.inv_equality()
 
         while self.check(TokenType.EROTEME) and self.check_next_next(TokenType.COLON):
             self.advance()
-            truthy = self.equality()
+            truthy = self.inv_equality()
             self.advance()
-            falsy = self.equality()
+            falsy = self.inv_equality()
             expression = expr.Ternary(expression, truthy, falsy)
 
         return expression
 
 
+    def inv_equality(self) -> expr.Expr:
+        if self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
+            invalid_expression = self.equality()
+
+        return self.equality()
+
 
     def equality(self) -> expr.Expr:
-        expression = self.comparison()
+        expression = self.inv_comparison()
 
         while self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
             operator = self.previous()
-            right = self.comparison()
+            right = self.inv_comparison()
             expression = expr.Binary(expression, operator, right)
 
         return expression
+
+
+    def inv_comparison(self) -> expr.Expr:
+        if self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
+            invalid_expression = self.comparison()
+
+        return self.comparison()
 
 
     def comparison(self) -> expr.Expr:
-        expression = self.term()
+        expression = self.inv_term()
 
         while self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
             operator = self.previous()
-            right = self.term()
+            right = self.inv_term()
             expression = expr.Binary(expression, operator, right)
 
         return expression
+
+
+    def inv_term(self) -> expr.Expr:
+        if self.match(TokenType.MINUS, TokenType.PLUS):
+            invalid_expression = self.term()
+
+        return self.term()
 
 
     def term(self) -> expr.Expr:
-        expression = self.factor()
+        expression = self.inv_factor()
 
         while self.match(TokenType.MINUS, TokenType.PLUS):
             operator = self.previous()
-            right = self.factor()
+            right = self.inv_factor()
             expression = expr.Binary(expression, operator, right)
 
         return expression
+
+
+    def inv_factor(self) -> expr.Expr:
+        if self.match(TokenType.SLASH, TokenType.STAR):
+            invalid_expression = self.factor()
+
+        return self.factor()
 
 
     def factor(self) -> expr.Expr:
