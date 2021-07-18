@@ -309,6 +309,7 @@ class Parser:
 
     def inv_comma(self) -> expr.Expr:
         if self.match(TokenType.COMMA):
+            self.error(self.peek(), "Comma operator without left-hand operand.")
             invalid_expression = self.comma()
 
         return self.comma()
@@ -327,6 +328,7 @@ class Parser:
 
     def inv_ternary(self) -> expr.Expr:
         if self.match(TokenType.EROTEME, TokenType.COLON):
+            self.error(self.peek(), "Ternary operator without left-hand operand.")
             invalid_expression = self.ternary()
 
         return self.ternary()
@@ -348,6 +350,7 @@ class Parser:
 
     def inv_equality(self) -> expr.Expr:
         if self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
+            self.error(self.peek(), "Equality operator without left-hand operand.")
             invalid_expression = self.equality()
 
         return self.equality()
@@ -366,6 +369,7 @@ class Parser:
 
     def inv_comparison(self) -> expr.Expr:
         if self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
+            self.error(self.peek(), "Comparison operator without left-hand operand.")
             invalid_expression = self.comparison()
 
         return self.comparison()
@@ -384,6 +388,7 @@ class Parser:
 
     def inv_term(self) -> expr.Expr:
         if self.match(TokenType.MINUS, TokenType.PLUS):
+            self.error(self.peek(), "Term operator without left-hand operand.")
             invalid_expression = self.term()
 
         return self.term()
@@ -402,6 +407,7 @@ class Parser:
 
     def inv_factor(self) -> expr.Expr:
         if self.match(TokenType.SLASH, TokenType.STAR):
+            self.error(self.peek(), "Factor operator without left-hand operand.")
             invalid_expression = self.factor()
 
         return self.factor()
