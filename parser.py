@@ -238,7 +238,7 @@ class Parser:
 
 
     def error(self, token: Token, message: str) -> Exception:
-        self.reporter.error_parser(token, message)
+        self.reporter.parse_error(token, message)
         return self.ParseException()
 
 

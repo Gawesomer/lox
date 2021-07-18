@@ -70,7 +70,7 @@ class Lox:
 
 
     @classmethod
-    def error_parser(cls, token: Token, message: str):
+    def parse_error(cls, token: Token, message: str):
         if token.type == TokenType.EOF:
             cls.report(token.line, " at end", message)
         else:
