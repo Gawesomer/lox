@@ -1,4 +1,6 @@
 from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
+from runtime_exception import RuntimeException
+from token import Token
 
 
 class Interpreter(Expr.Visitor):
@@ -13,23 +15,31 @@ class Interpreter(Expr.Visitor):
         elif expr.operator.type == TokenType.BANG_EQUAL:
             return not self.is_equal(left, right)
         elif expr.operator.type == TokenType.GREATER:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) > int(right)
         elif expr.operator.type == TokenType.GREATER_EQUAL:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) >= int(right)
         elif expr.operator.type == TokenType.LESS:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) < int(right)
         elif expr.operator.type == TokenType.LESS_EQUAL:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) <= int(right)
         elif expr.operator.type == TokenType.MINUS:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) - int(right)
         elif expr.operator.type == TokenType.PLUS:
             if isinstance(left, int) and isinstance(right, int):
                 return int(left) + int(right)
             elif isinstance(left, str) and isinstance(right, str):
                 return str(left) + str(right)
+            raise RuntimeException(operator, "Operands must be two numbers or two strings.")
         elif expr.operator.type == TokenType.SLASH:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) / int(right)
         elif expr.operator.type == TokenType.STAR:
+            self.check_number_operands(expr.operator, left, right)
             return int(left) * int(right)
 
         # Unreachable.
@@ -50,6 +60,7 @@ class Interpreter(Expr.Visitor):
         if expr.operator.type == TokenType.BANG:
             return not self.is_truthy(right)
         elif expr.operator.type == TokenType.MINUS:
+            self.check_number_operand(expr.operator, right)
             return -int(right)
 
         # Unreachable
@@ -77,3 +88,15 @@ class Interpreter(Expr.Visitor):
 
     def is_equal(self, a: object, b: object) -> bool:
         return a == b
+
+
+    def check_number_operand(self, operator: Token, operand: object):
+        if isinstance(operand, int):
+            return
+        raise RuntimeException(operator, "Operand must be a number.")
+
+
+    def check_number_operands(self, operator: Token, left: object, right: object):
+        if isinstance(left, int) and isinstance(right, int):
+            return
+        raise RuntimeException(operator, "Operands must be numbers.")
