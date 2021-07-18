@@ -335,12 +335,13 @@ class Parser:
     def ternary(self) -> expr.Expr:
         expression = self.inv_equality()
 
-        while self.check(TokenType.EROTEME) and self.check_next_next(TokenType.COLON):
-            self.advance()
+        while self.match(TokenType.EROTEME):
             truthy = self.inv_equality()
-            self.advance()
-            falsy = self.inv_equality()
-            expression = expr.Ternary(expression, truthy, falsy)
+            if self.match(TokenType.COLON):
+                falsy = self.inv_equality()
+                expression = expr.Ternary(expression, truthy, falsy)
+            else:
+                raise self.error(self.peek(), "Expect ':'.")
 
         return expression
 
