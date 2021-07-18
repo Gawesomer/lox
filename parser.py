@@ -25,7 +25,7 @@ class Parser:
                        | "(" expression ")" ;
     """
 
-    class ParseError(Exception):
+    class ParseException(Exception):
         pass
 
 
@@ -38,7 +38,7 @@ class Parser:
     def parse(self) -> Expr:
         try:
             return self.expression()
-        except self.ParseError:
+        except self.ParseException:
             return None
 
 
@@ -239,7 +239,7 @@ class Parser:
 
     def error(self, token: Token, message: str) -> Exception:
         self.reporter.error_parser(token, message)
-        return self.ParseError()
+        return self.ParseException()
 
 
     def synchronize(self):
