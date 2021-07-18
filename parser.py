@@ -1,4 +1,4 @@
-import expr
+from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
 from token import Token
 from token_type import TokenType
 
@@ -35,18 +35,18 @@ class Parser:
         self.current = 0
 
 
-    def parse(self) -> expr.Expr:
+    def parse(self) -> Expr:
         try:
             return self.expression()
         except self.ParseError:
             return None
 
 
-    def expression(self) -> expr.Expr:
+    def expression(self) -> Expr:
         return self.inv_comma()
 
 
-    def inv_comma(self) -> expr.Expr:
+    def inv_comma(self) -> Expr:
         if self.match(TokenType.COMMA):
             self.error(self.peek(), "Comma operator without left-hand operand.")
             invalid_expression = self.comma()
@@ -54,18 +54,18 @@ class Parser:
         return self.comma()
 
 
-    def comma(self) -> expr.Expr:
+    def comma(self) -> Expr:
         expression = self.inv_ternary()
 
         while self.match(TokenType.COMMA):
             operator = self.previous()
             right = self.inv_ternary()
-            expression = expr.Binary(expression, operator, right)
+            expression = Binary(expression, operator, right)
 
         return expression
 
 
-    def inv_ternary(self) -> expr.Expr:
+    def inv_ternary(self) -> Expr:
         if self.match(TokenType.EROTEME, TokenType.COLON):
             self.error(self.peek(), "Ternary operator without left-hand operand.")
             invalid_expression = self.ternary()
@@ -73,21 +73,21 @@ class Parser:
         return self.ternary()
 
 
-    def ternary(self) -> expr.Expr:
+    def ternary(self) -> Expr:
         expression = self.inv_equality()
 
         while self.match(TokenType.EROTEME):
             truthy = self.inv_equality()
             if self.match(TokenType.COLON):
                 falsy = self.inv_equality()
-                expression = expr.Ternary(expression, truthy, falsy)
+                expression = Ternary(expression, truthy, falsy)
             else:
                 raise self.error(self.peek(), "Expect ':'.")
 
         return expression
 
 
-    def inv_equality(self) -> expr.Expr:
+    def inv_equality(self) -> Expr:
         if self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
             self.error(self.peek(), "Equality operator without left-hand operand.")
             invalid_expression = self.equality()
@@ -95,18 +95,18 @@ class Parser:
         return self.equality()
 
 
-    def equality(self) -> expr.Expr:
+    def equality(self) -> Expr:
         expression = self.inv_comparison()
 
         while self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
             operator = self.previous()
             right = self.inv_comparison()
-            expression = expr.Binary(expression, operator, right)
+            expression = Binary(expression, operator, right)
 
         return expression
 
 
-    def inv_comparison(self) -> expr.Expr:
+    def inv_comparison(self) -> Expr:
         if self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
             self.error(self.peek(), "Comparison operator without left-hand operand.")
             invalid_expression = self.comparison()
@@ -114,18 +114,18 @@ class Parser:
         return self.comparison()
 
 
-    def comparison(self) -> expr.Expr:
+    def comparison(self) -> Expr:
         expression = self.inv_term()
 
         while self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
             operator = self.previous()
             right = self.inv_term()
-            expression = expr.Binary(expression, operator, right)
+            expression = Binary(expression, operator, right)
 
         return expression
 
 
-    def inv_term(self) -> expr.Expr:
+    def inv_term(self) -> Expr:
         if self.match(TokenType.MINUS, TokenType.PLUS):
             self.error(self.peek(), "Term operator without left-hand operand.")
             invalid_expression = self.term()
@@ -133,18 +133,18 @@ class Parser:
         return self.term()
 
 
-    def term(self) -> expr.Expr:
+    def term(self) -> Expr:
         expression = self.inv_factor()
 
         while self.match(TokenType.MINUS, TokenType.PLUS):
             operator = self.previous()
             right = self.inv_factor()
-            expression = expr.Binary(expression, operator, right)
+            expression = Binary(expression, operator, right)
 
         return expression
 
 
-    def inv_factor(self) -> expr.Expr:
+    def inv_factor(self) -> Expr:
         if self.match(TokenType.SLASH, TokenType.STAR):
             self.error(self.peek(), "Factor operator without left-hand operand.")
             invalid_expression = self.factor()
@@ -152,41 +152,41 @@ class Parser:
         return self.factor()
 
 
-    def factor(self) -> expr.Expr:
+    def factor(self) -> Expr:
         expression = self.unary()
 
         while self.match(TokenType.SLASH, TokenType.STAR):
             operator = self.previous()
             right = self.factor()
-            expression = expr.Binary(expression, operator, right)
+            expression = Binary(expression, operator, right)
 
         return expression
 
 
-    def unary(self) -> expr.Expr:
+    def unary(self) -> Expr:
         if self.match(TokenType.BANG, TokenType.MINUS):
             operator = self.previous()
             right = self.unary()
-            return expr.Unary(operator, right)
+            return Unary(operator, right)
 
         return self.primary()
 
 
-    def primary(self) -> expr.Expr:
+    def primary(self) -> Expr:
         if self.match(TokenType.FALSE):
-            return expr.Literal(False)
+            return Literal(False)
         if self.match(TokenType.TRUE):
-            return expr.Literal(True)
+            return Literal(True)
         if self.match(TokenType.NIL):
-            return expr.Literal(None)
+            return Literal(None)
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
-            return expr.Literal(self.previous().literal)
+            return Literal(self.previous().literal)
 
         if self.match(TokenType.LEFT_PAREN):
             expression = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
-            return expr.Grouping(expression)
+            return Grouping(expression)
 
         raise self.error(self.peek(), "Expect expression.")
 

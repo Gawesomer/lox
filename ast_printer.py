@@ -1,33 +1,33 @@
-import expr
+from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
 from token import Token
 from token_type import TokenType
 
 
-class ASTPrinter(expr.Expr.Visitor):
+class ASTPrinter(Expr.Visitor):
 
-    def print(self, expr: expr.Expr) -> str:
+    def print(self, expr: Expr) -> str:
         return expr.accept(self)
 
 
-    def visit_binary_expr(self, expr: expr.Binary) -> str:
+    def visit_binary_expr(self, expr: Binary) -> str:
         return self.parenthesize(expr.operator.lexeme, expr.left, expr.right)
 
 
-    def visit_grouping_expr(self, expr: expr.Grouping) -> str:
+    def visit_grouping_expr(self, expr: Grouping) -> str:
         return self.parenthesize("group", expr.expression)
 
 
-    def visit_literal_expr(self, expr: expr.Literal) -> str:
+    def visit_literal_expr(self, expr: Literal) -> str:
         if expr.value == None:
             return "nil"
         return str(expr.value)
 
 
-    def visit_unary_expr(self, expr: expr.Unary) -> str:
+    def visit_unary_expr(self, expr: Unary) -> str:
         return self.parenthesize(expr.operator.lexeme, expr.right)
 
 
-    def visit_ternary_expr(self, expr: expr.Ternary) -> str:
+    def visit_ternary_expr(self, expr: Ternary) -> str:
         return self.parenthesize("ternary", expr.conditional, expr.truthy, expr.falsy)
 
 
@@ -41,13 +41,13 @@ class ASTPrinter(expr.Expr.Visitor):
 
 if __name__ == "__main__":
     # -123 * (45.67)
-    expression = expr.Binary(
-        expr.Unary(
+    expression = Binary(
+        Unary(
             Token(TokenType.MINUS, "-", None, 1),
-            expr.Literal(123)),
+            Literal(123)),
         Token(TokenType.STAR, "*", None, 1),
-        expr.Grouping(
-            expr.Literal(45.67)))
+        Grouping(
+            Literal(45.67)))
 
     # Expect "(* (- 123) (group 45.67))"
     print(ASTPrinter().print(expression))
