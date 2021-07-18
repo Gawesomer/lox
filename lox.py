@@ -1,7 +1,9 @@
 import sys
 
 from ast_printer import ASTPrinter
+from interpreter import Interpreter
 from parser import Parser
+from runtime_exception import RuntimeException
 from scanner import Scanner
 from token import Token
 from token_type import TokenType
@@ -10,6 +12,7 @@ from token_type import TokenType
 class Lox:
 
     had_error = False
+    had_runtime_error = False
 
     @classmethod
     def main(cls):
@@ -28,7 +31,9 @@ class Lox:
             code = f.read()
             cls.run(code)
         if cls.had_error:
-            exit(1)
+            exit(65)
+        if cls.had_runtime_error:
+            exit(70)
 
 
     @classmethod
@@ -57,6 +62,8 @@ class Lox:
 
         print(ASTPrinter().print(expression))
 
+        Interpreter(cls).interpret(expression)
+
 
     @classmethod
     def error(cls, line: int, message: str):
@@ -75,6 +82,12 @@ class Lox:
             cls.report(token.line, " at end", message)
         else:
             cls.report(token.line, " at '{}'".format(token.lexeme), message)
+
+
+    @classmethod
+    def runtime_error(cls, error: RuntimeException):
+        print("{}\n[line {}]".format(str(error), error.token.line))
+        cls.had_runtime_error = True
 
 
 if __name__ == "__main__":
