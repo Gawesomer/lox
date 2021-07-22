@@ -44,11 +44,11 @@ class Interpreter(Expr.Visitor):
             self.check_number_operands(expr.operator, left, right)
             return float(left) - float(right)
         elif expr.operator.type == TokenType.PLUS:
-            if isinstance(left, int) and isinstance(right, int):
+            if isinstance(left, float) and isinstance(right, float):
                 return float(left) + float(right)
             elif isinstance(left, str) and isinstance(right, str):
                 return str(left) + str(right)
-            raise RuntimeException(operator, "Operands must be two numbers or two strings.")
+            raise RuntimeException(expr.operator, "Operands must be two numbers or two strings.")
         elif expr.operator.type == TokenType.SLASH:
             self.check_number_operands(expr.operator, left, right)
             return float(left) / float(right)
@@ -75,7 +75,7 @@ class Interpreter(Expr.Visitor):
             return not self.is_truthy(right)
         elif expr.operator.type == TokenType.MINUS:
             self.check_number_operand(expr.operator, right)
-            return -int(right)
+            return -float(right)
 
         # Unreachable
         return None
@@ -105,13 +105,13 @@ class Interpreter(Expr.Visitor):
 
 
     def check_number_operand(self, operator: Token, operand: object):
-        if isinstance(operand, int):
+        if isinstance(operand, float):
             return
         raise RuntimeException(operator, "Operand must be a number.")
 
 
     def check_number_operands(self, operator: Token, left: object, right: object):
-        if isinstance(left, int) and isinstance(right, int):
+        if isinstance(left, float) and isinstance(right, float):
             return
         raise RuntimeException(operator, "Operands must be numbers.")
 
@@ -120,7 +120,7 @@ class Interpreter(Expr.Visitor):
         if obj is None:
             return "nil"
 
-        if isinstance(obj, int):
+        if isinstance(obj, float):
             text = str(obj)
             if text.endswith(".0"):
                 text = text[:-2]
