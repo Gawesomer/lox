@@ -15,7 +15,7 @@ class Parser:
         equality       → inv_comparison ( ( "!=" | "==" ) inv_comparison )* ;
         inv_comparison → ( ">" | ">=" | "<" | "<=" ) comparison ;
         comparison     → inv_term ( ( ">" | ">=" | "<" | "<=" ) inv_term )* ;
-        inv_term       → ( "-" | "+" ) term ;
+        inv_term       → "+" term ;
         term           → inv_factor ( ( "-" | "+" ) inv_factor )* ;
         inv_factor     → ( "/" | "*" ) factory ;
         factor         → unary ( ( "/" | "*" ) unary )* ;
@@ -126,7 +126,7 @@ class Parser:
 
 
     def inv_term(self) -> Expr:
-        if self.match(TokenType.MINUS, TokenType.PLUS):
+        if self.match(TokenType.PLUS):
             self.error(self.peek(), "Term operator without left-hand operand.")
             invalid_expression = self.term()
 
