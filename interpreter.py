@@ -51,6 +51,8 @@ class Interpreter(Expr.Visitor):
             raise RuntimeException(expr.operator, "Operands must be two numbers or two strings.")
         elif expr.operator.type == TokenType.SLASH:
             self.check_number_operands(expr.operator, left, right)
+            if float(right) == 0:
+                raise RuntimeException(expr.operator, "Division by zero.")
             return float(left) / float(right)
         elif expr.operator.type == TokenType.STAR:
             self.check_number_operands(expr.operator, left, right)
