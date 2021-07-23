@@ -46,7 +46,7 @@ class Interpreter(Expr.Visitor):
         elif expr.operator.type == TokenType.PLUS:
             if isinstance(left, float) and isinstance(right, float):
                 return float(left) + float(right)
-            elif isinstance(left, str) and isinstance(right, str):
+            elif isinstance(left, str) or isinstance(right, str):
                 return str(left) + str(right)
             raise RuntimeException(expr.operator, "Operands must be two numbers or two strings.")
         elif expr.operator.type == TokenType.SLASH:
