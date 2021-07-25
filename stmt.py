@@ -16,16 +16,16 @@ class Stmt:
 
 
 class Expression(Stmt):
-    def __init__(self, expression Expr):
-        self.expression Expr = expression Expr
+    def __init__(self, expression: Expr):
+        self.expression = expression
 
     def accept(self, visitor):
         return visitor.visit_expression_stmt(self)
 
 
 class Print(Stmt):
-    def __init__(self, expression Expr):
-        self.expression Expr = expression Expr
+    def __init__(self, expression: Expr):
+        self.expression = expression
 
     def accept(self, visitor):
         return visitor.visit_print_stmt(self)

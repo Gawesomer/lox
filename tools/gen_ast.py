@@ -19,8 +19,8 @@ class GenerateAST:
         ])
         cls.define_ast(output_dir, "Stmt",
             "from expr import Expr\n", [
-            "Expression ; expression Expr",
-            "Print      ; expression Expr",
+            "Expression ; expression: Expr",
+            "Print      ; expression: Expr",
         ])
 
 
