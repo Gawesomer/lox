@@ -16,20 +16,21 @@ class Lox:
 
     @classmethod
     def main(cls):
+        _interpreter = Interpreter(cls)
         if len(sys.argv) > 2:
           print("Usage: jlox [script]")
           exit(1)
         elif len(sys.argv) == 2:
-          cls.run_file(sys.argv[1])
+          cls.run_file(sys.argv[1], _interpreter)
         else:
-          cls.run_prompt()
+          cls.run_prompt(_interpreter)
 
 
     @classmethod
-    def run_file(cls, filename: str):
+    def run_file(cls, filename: str, _interpreter: Interpreter):
         with open(filename, 'r') as f:
             code = f.read()
-            cls.run(code)
+            cls.run(code, _interpreter)
         if cls.had_error:
             exit(65)
         if cls.had_runtime_error:
@@ -37,18 +38,18 @@ class Lox:
 
 
     @classmethod
-    def run_prompt(cls):
+    def run_prompt(cls, _interpreter: Interpreter):
         while True:
             try:
                 line = input("> ")
-                cls.run(line)
+                cls.run(line, _interpreter)
                 cls.had_error = False
             except EOFError:
                 break
 
 
     @classmethod
-    def run(cls, source: str):
+    def run(cls, source: str, _interpreter: Interpreter):
         scanner = Scanner(cls, source)
         tokens = scanner.scan_tokens()
         for token in tokens:
@@ -62,7 +63,7 @@ class Lox:
 
         print(ASTPrinter().print(expression))
 
-        Interpreter(cls).interpret(expression)
+        _interpreter.interpret(expression)
 
 
     @classmethod
