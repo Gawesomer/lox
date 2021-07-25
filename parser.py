@@ -1,4 +1,5 @@
 from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
+from stmt import Stmt, Expression, Print
 from token import Token
 from token_type import TokenType
 
@@ -40,11 +41,31 @@ class Parser:
         self.current = 0
 
 
-    def parse(self) -> Expr:
-        try:
-            return self.expression()
-        except self.ParseException:
-            return None
+    def parse(self) -> list[Stmt]:
+        statements = []
+        while not self.is_at_end():
+            statements.append(self.statement())
+
+        return statements
+
+
+    def statement(self) -> Stmt:
+        if self.match(TokenType.PRINT):
+            return self.print_statement()
+
+        return self.expression_statement()
+
+
+    def print_statement(self) -> Stmt:
+        value = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Print(value)
+
+
+    def expression_statement(self) -> Stmt:
+        expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return Expression(expr)
 
 
     def expression(self) -> Expr:
