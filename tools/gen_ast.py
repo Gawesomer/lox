@@ -16,6 +16,10 @@ class GenerateAST:
             "Unary    ; operator: Token, right: Expr",
             "Ternary  ; conditional: Expr, truthy: Expr, falsy: Expr",
         ])
+        cls.define_ast(output_dir, "Stmt", [
+            "Expression ; expression Expr",
+            "Print      ; expression Expr",
+        ])
 
 
     @classmethod

@@ -6,6 +6,11 @@ from token_type import TokenType
 class Parser:
     """
     Expression grammar:
+        program        → statement* EOF ;
+        statement      → exprStmt
+                       | printStmt ;
+        exprStmt       → expression ";" ;
+        printStmt      → "print" expression ";" ;
         expression     → inv_comma ;
         inv_comma      → "," comma ;
         comma          → inv_ternary ("," inv_ternary )* ;
