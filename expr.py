@@ -19,6 +19,9 @@ class Expr:
         def visit_ternary_expr(self, expr: 'Ternary'):
             raise NotImplementedError
 
+        def visit_variable_expr(self, expr: 'Variable'):
+            raise NotImplementedError
+
 
     def accept(self, visitor):
         raise NotImplementedError
@@ -67,5 +70,13 @@ class Ternary(Expr):
 
     def accept(self, visitor):
         return visitor.visit_ternary_expr(self)
+
+
+class Variable(Expr):
+    def __init__(self, Token name):
+        self.Token name = Token name
+
+    def accept(self, visitor):
+        return visitor.visit_variable_expr(self)
 
 
