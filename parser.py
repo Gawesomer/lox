@@ -7,11 +7,14 @@ from token_type import TokenType
 class Parser:
     """
     Expression grammar:
-        program        → statement* EOF ;
-        statement      → exprStmt
-                       | printStmt ;
-        exprStmt       → expression ";" ;
-        printStmt      → "print" expression ";" ;
+        program        → declaration* EOF ;
+        declaration    → var_decl
+                       | statement ;
+        var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
+        statement      → expr_stmt
+                       | print_stmt ;
+        expr_stmt      → expression ";" ;
+        print_stmt     → "print" expression ";" ;
         expression     → inv_comma ;
         inv_comma      → "," comma ;
         comma          → inv_ternary ("," inv_ternary )* ;
@@ -28,7 +31,8 @@ class Parser:
         unary          → ( "!" | "-" ) unary
                        | primary ;
         primary        → NUMBER | STRING | "true" | "false" | "nil"
-                       | "(" expression ")" ;
+                       | "(" expression ")"
+                       | IDENTIFIER ;
     """
 
     class ParseException(Exception):
