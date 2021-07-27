@@ -55,15 +55,15 @@ class Lox:
         for token in tokens:
             print(token)
         parser = Parser(cls, tokens)
-        expression = parser.parse()
+        statements = parser.parse()
 
         # Stop if there was a syntax error.
         if cls.had_error:
             return
 
-        print(ASTPrinter().print(expression))
+        # print(ASTPrinter().print(expression))
 
-        _interpreter.interpret(expression)
+        _interpreter.interpret(statements)
 
 
     @classmethod

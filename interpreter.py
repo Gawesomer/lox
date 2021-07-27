@@ -1,10 +1,11 @@
 from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
 from runtime_exception import RuntimeException
+from stmt import Stmt, Expression, Print
 from token import Token
 from token_type import TokenType
 
 
-class Interpreter(Expr.Visitor):
+class Interpreter(Expr.Visitor, Stmt.Visitor):
 
 
     def __init__(self, reporter: "Lox"):
@@ -12,10 +13,12 @@ class Interpreter(Expr.Visitor):
         self.reporter = reporter
 
 
-    def interpret(self, expression: Expr):
+    def interpret(self, statements: list[Stmt]):
         try:
-            value = self.evaluate(expression)
-            print(self.stringify(value))
+            for statement in statements:
+                self.execute(statement)
+            # value = self.evaluate(expression)
+            # print(self.stringify(value))
         except RuntimeException as error:
             self.reporter.runtime_error(error)
 
@@ -92,6 +95,21 @@ class Interpreter(Expr.Visitor):
 
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
+
+
+    def execute(self, stmt: Stmt):
+        stmt.accept(self)
+
+
+    def visit_expression_stmt(self, stmt: Expression):
+        self.evaluate(stmt.expression)
+        return None
+
+
+    def visit_print_stmt(self, stmt: Print):
+        value = self.evaluate(stmt.expression)
+        print(self.stringify(value))
+        return None
 
 
     def is_truthy(self, obj: object) -> bool:
