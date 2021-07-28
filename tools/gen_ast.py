@@ -19,7 +19,7 @@ class GenerateAST:
                 "Literal  ; value: object",
                 "Unary    ; operator: Token, right: Expr",
                 "Ternary  ; conditional: Expr, truthy: Expr, falsy: Expr",
-                "Variable ; Token name",
+                "Variable ; name: Token",
             ]
         )
         cls.define_ast(output_dir, "Stmt",
