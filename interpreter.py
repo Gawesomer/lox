@@ -1,6 +1,7 @@
-from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
+from environment import Environment
+from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable
 from runtime_exception import RuntimeException
-from stmt import Stmt, Expression, Print
+from stmt import Stmt, Expression, Print, Var
 from token import Token
 from token_type import TokenType
 
@@ -11,6 +12,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def __init__(self, reporter: "Lox"):
         super().__init__()
         self.reporter = reporter
+        self.environment = Environment()
 
 
     def interpret(self, statements: list[Stmt]):
@@ -93,6 +95,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         return self.evaluate(expr.falsy)
 
 
+    def visit_variable_expr(self, expr: Variable) -> object:
+        return self.environment.get(expr.name)
+
+
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
 
@@ -109,6 +115,15 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
+        return None
+
+
+    def visit_var_stmt(self, stmt: Var):
+        value = None
+        if stmt.initializer is not None:
+            value = self.evaluate(stmt.initializer)
+
+        self.environment.define(stmt.name.lexeme, value)
         return None
 
 

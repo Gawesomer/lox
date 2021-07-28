@@ -1,5 +1,5 @@
-from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
-from stmt import Stmt, Expression, Print
+from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable
+from stmt import Stmt, Expression, Print, Var
 from token import Token
 from token_type import TokenType
 
@@ -48,9 +48,30 @@ class Parser:
     def parse(self) -> list[Stmt]:
         statements = []
         while not self.is_at_end():
-            statements.append(self.statement())
+            statements.append(self.declaration())
 
         return statements
+
+
+    def declaration(self) -> Stmt:
+        try:
+            if self.match(TokenType.VAR):
+                return self.var_declaration()
+            return self.statement()
+        except self.ParseException:
+            self.synchronize()
+            return None
+
+
+    def var_declaration(self) -> Stmt:
+        name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
+
+        initializer = None
+        if self.match(TokenType.EQUAL):
+            initializer = self.expression()
+
+        self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return Var(name, initializer)
 
 
     def statement(self) -> Stmt:
@@ -212,6 +233,9 @@ class Parser:
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.IDENTIFIER):
+            return Variable(self.previous())
 
         if self.match(TokenType.LEFT_PAREN):
             expression = self.expression()
