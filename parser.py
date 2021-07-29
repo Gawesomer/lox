@@ -1,4 +1,4 @@
-from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable
+from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable, Assign
 from stmt import Stmt, Expression, Print, Var
 from token import Token
 from token_type import TokenType
@@ -15,7 +15,9 @@ class Parser:
                        | print_stmt ;
         expr_stmt      → expression ";" ;
         print_stmt     → "print" expression ";" ;
-        expression     → inv_comma ;
+        expression     → assignment ;
+        assignment     → IDENTIFIER "=" assignment
+                       | inv_comma ;
         inv_comma      → "," comma ;
         comma          → inv_ternary ("," inv_ternary )* ;
         inv_ternary    → ( "?" | ":" ) ternary ;
@@ -94,7 +96,23 @@ class Parser:
 
 
     def expression(self) -> Expr:
-        return self.inv_comma()
+        return self.assignment()
+
+
+    def assignment(self) -> Expr:
+        expr = self.inv_comma()
+
+        if self.match(TokenType.EQUAL):
+            equals = self.previous()
+            value = self.assignment()
+
+            if isinstance(expr, Variable):
+                name = expr.name
+                return Assign(name, value)
+
+            self.error(equals, "Invalid assignment target.")
+
+        return expr
 
 
     def inv_comma(self) -> Expr:

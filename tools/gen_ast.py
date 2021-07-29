@@ -14,6 +14,7 @@ class GenerateAST:
                 "from token import Token",
             ],
             [
+                "Assign   ; name: Token, value: Expr",
                 "Binary   ; left: Expr, operator: Token, right: Expr",
                 "Grouping ; expression: Expr",
                 "Literal  ; value: object",

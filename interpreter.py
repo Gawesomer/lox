@@ -1,5 +1,5 @@
 from environment import Environment
-from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable
+from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable, Assign
 from runtime_exception import RuntimeException
 from stmt import Stmt, Expression, Print, Var
 from token import Token
@@ -97,6 +97,12 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_variable_expr(self, expr: Variable) -> object:
         return self.environment.get(expr.name)
+
+
+    def visit_assign_expr(self, expr: Assign) -> object:
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
 
 
     def evaluate(self, expr: Expr) -> object:

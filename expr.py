@@ -4,6 +4,9 @@ from token import Token
 
 class Expr:
     class Visitor:
+        def visit_assign_expr(self, expr: 'Assign'):
+            raise NotImplementedError
+
         def visit_binary_expr(self, expr: 'Binary'):
             raise NotImplementedError
 
@@ -25,6 +28,15 @@ class Expr:
 
     def accept(self, visitor):
         raise NotImplementedError
+
+
+class Assign(Expr):
+    def __init__(self, name: Token, value: Expr):
+        self.name = name
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visit_assign_expr(self)
 
 
 class Binary(Expr):
