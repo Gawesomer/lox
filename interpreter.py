@@ -1,7 +1,7 @@
 from environment import Environment
 from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable, Assign
 from runtime_exception import RuntimeException
-from stmt import Stmt, Expression, Print, Var
+from stmt import Stmt, Expression, Print, Var, Block
 from token import Token
 from token_type import TokenType
 
@@ -113,6 +113,16 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         stmt.accept(self)
 
 
+    def execute_block(self, statements: list[Stmt], environment: Environment):
+        previous = self.environment
+        try:
+            self.environment = environment
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self.environment = previous
+
+
     def visit_expression_stmt(self, stmt: Expression):
         self.evaluate(stmt.expression)
         return None
@@ -130,6 +140,11 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             value = self.evaluate(stmt.initializer)
 
         self.environment.define(stmt.name.lexeme, value)
+        return None
+
+
+    def visit_block_stmt(self, stmt: Block):
+        self.execute_block(stmt.statements, Environment(self.environment))
         return None
 
 

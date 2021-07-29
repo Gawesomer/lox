@@ -29,6 +29,7 @@ class GenerateAST:
                 "from token import Token",
             ],
             [
+                "Block      ; statements: list[Stmt]",
                 "Expression ; expression: Expr",
                 "Print      ; expression: Expr",
                 "Var        ; name: Token, initializer: Expr",

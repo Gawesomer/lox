@@ -1,5 +1,5 @@
 from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable, Assign
-from stmt import Stmt, Expression, Print, Var
+from stmt import Stmt, Expression, Print, Var, Block
 from token import Token
 from token_type import TokenType
 
@@ -12,9 +12,11 @@ class Parser:
                        | statement ;
         var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → expr_stmt
-                       | print_stmt ;
+                       | print_stmt
+                       | block ;
         expr_stmt      → expression ";" ;
         print_stmt     → "print" expression ";" ;
+        block          → "{" declaration* "}" ;
         expression     → assignment ;
         assignment     → IDENTIFIER "=" assignment
                        | inv_comma ;
@@ -79,6 +81,8 @@ class Parser:
     def statement(self) -> Stmt:
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.LEFT_BRACE):
+            return Block(self.block())
 
         return self.expression_statement()
 
@@ -87,6 +91,16 @@ class Parser:
         value = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+
+
+    def block(self) -> list[Stmt]:
+        statements = []
+
+        while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            statements.append(self.declaration())
+
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return statements
 
 
     def expression_statement(self) -> Stmt:
