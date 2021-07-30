@@ -36,7 +36,6 @@ class GenerateAST:
             ]
         )
 
-
     @classmethod
     def define_ast(cls, output_dir: str, base_name: str, imports: list[str], types: list[str]):
         path = "{}/{}.py".format(output_dir, base_name.lower())
@@ -65,7 +64,6 @@ class GenerateAST:
                 class_name, fields = [s.strip() for s in type_.split(";")]
                 cls.define_type(writer, base_name, class_name, fields)
 
-
     @classmethod
     def define_type(cls, writer, base_name: str, class_name: str, field_list: str):
         writer.write("class {}({}):\n".format(class_name, base_name))
@@ -87,7 +85,6 @@ class GenerateAST:
 
         writer.write("\n")
         writer.write("\n")
-
 
     @classmethod
     def define_visitor(cls, writer, base_name: str, types: list[str]):

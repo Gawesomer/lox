@@ -23,7 +23,6 @@ class Scanner:
         "while": TokenType.WHILE,
     }
 
-
     def __init__(self, reporter: "Lox", source: str):
         self.reporter = reporter
         self.source = source
@@ -33,7 +32,6 @@ class Scanner:
         self.current = 0
         self.line = 1
 
-
     def scan_tokens(self):
         while not self.is_at_end():
             # We are at the beginning of the next lexeme.
@@ -42,7 +40,6 @@ class Scanner:
 
         self.tokens.append(Token(TokenType.EOF, "", None, self.line))
         return self.tokens
-
 
     def scan_token(self):
         c = self.advance()
@@ -94,20 +91,16 @@ class Scanner:
         else:
             self.reporter.error(self.line, "Unexpected character.")
 
-
     def is_at_end(self):
         return self.current >= len(self.source)
-
 
     def advance(self) -> str:
         self.current += 1
         return self.source[self.current-1]
 
-
     def add_token(self, token_type: TokenType, literal=None):
         text = self.source[self.start:self.current]
         self.tokens.append(Token(token_type, text, literal, self.line))
-
 
     def match(self, expected: str) -> bool:
         if self.is_at_end() or self.source[self.current] != expected:
@@ -116,18 +109,15 @@ class Scanner:
         self.current += 1
         return True
 
-
     def peek(self) -> str:
         if self.is_at_end():
             return '\0'
         return self.source[self.current]
 
-
     def peek_next(self):
         if self.current+1 >= len(self.source):
             return '\0'
         return self.source[self.current+1]
-
 
     def string(self):
         while self.peek() != '"' and not self.is_at_end():
@@ -146,7 +136,6 @@ class Scanner:
         value = self.source[self.start+1:self.current-1]
         self.add_token(TokenType.STRING, value)
 
-
     def number(self):
         while self.peek().isdigit():
             self.advance()
@@ -161,7 +150,6 @@ class Scanner:
 
         self.add_token(TokenType.NUMBER, float(self.source[self.start:self.current]))
 
-
     def identifier(self):
         while self.peek().isalnum():
             self.advance()
@@ -170,7 +158,6 @@ class Scanner:
         token_type = self.keywords.get(text, TokenType.IDENTIFIER)
 
         self.add_token(token_type)
-
 
     def comment(self):
         if self.match('/'):     # Line comment.

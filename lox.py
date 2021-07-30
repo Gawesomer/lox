@@ -17,13 +17,12 @@ class Lox:
     @classmethod
     def main(cls):
         if len(sys.argv) > 2:
-          print("Usage: jlox [script]")
-          exit(1)
+            print("Usage: jlox [script]")
+            exit(1)
         elif len(sys.argv) == 2:
-          cls.run_file(sys.argv[1])
+            cls.run_file(sys.argv[1])
         else:
-          cls.run_prompt()
-
+            cls.run_prompt()
 
     @classmethod
     def run_file(cls, filename: str):
@@ -36,7 +35,6 @@ class Lox:
         if cls.had_runtime_error:
             exit(70)
 
-
     @classmethod
     def run_prompt(cls):
         _interpreter = Interpreter(cls, is_repl=True)
@@ -47,7 +45,6 @@ class Lox:
                 cls.had_error = False
             except EOFError:
                 break
-
 
     @classmethod
     def run(cls, source: str, _interpreter: Interpreter):
@@ -62,17 +59,14 @@ class Lox:
 
         _interpreter.interpret(statements)
 
-
     @classmethod
     def error(cls, line: int, message: str):
         cls.report(line, "", message)
-
 
     @classmethod
     def report(cls, line: int, where: str, message: str):
         print("[line {}] Error{}: {}".format(line, where, message), file=sys.stderr)
         cls.had_error = True
-
 
     @classmethod
     def parse_error(cls, token: Token, message: str):
@@ -80,7 +74,6 @@ class Lox:
             cls.report(token.line, " at end", message)
         else:
             cls.report(token.line, " at '{}'".format(token.lexeme), message)
-
 
     @classmethod
     def runtime_error(cls, error: RuntimeException):

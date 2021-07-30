@@ -1,20 +1,18 @@
 from environment import Environment
-from expr import Expr, Binary, Grouping, Literal, Unary, Ternary, Variable, Assign
+from expr import Assign, Binary, Expr, Grouping, Literal, Ternary, Unary, Variable
 from runtime_exception import RuntimeException
-from stmt import Stmt, Expression, Print, Var, Block
+from stmt import Block, Expression, Print, Stmt, Var
 from token import Token
 from token_type import TokenType
 
 
 class Interpreter(Expr.Visitor, Stmt.Visitor):
 
-
     def __init__(self, reporter: "Lox", is_repl: bool = False):
         super().__init__()
         self.reporter = reporter
         self.environment = Environment()
         self.is_repl = is_repl
-
 
     def interpret(self, statements: list[Stmt]):
         try:
@@ -23,6 +21,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         except RuntimeException as error:
             self.reporter.runtime_error(error)
 
+    def visit_assign_expr(self, expr: Assign) -> object:
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
 
     def visit_binary_expr(self, expr: Binary) -> object:
         left = self.evaluate(expr.left)
@@ -65,14 +67,17 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         # Unreachable.
         return None
 
-
     def visit_grouping_expr(self, expr: Grouping) -> object:
         return self.evaluate(expr.expression)
-
 
     def visit_literal_expr(self, expr: Literal) -> object:
         return expr.value
 
+    def visit_ternary_expr(self, expr: Ternary) -> object:
+        conditional = self.evaluate(expr.conditional)
+        if conditional:
+            return self.evaluate(expr.truthy)
+        return self.evaluate(expr.falsy)
 
     def visit_unary_expr(self, expr: Unary) -> object:
         right = self.evaluate(expr.right)
@@ -86,31 +91,34 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         # Unreachable
         return None
 
-
-    def visit_ternary_expr(self, expr: Ternary) -> object:
-        conditional = self.evaluate(expr.conditional)
-        if conditional:
-            return self.evaluate(expr.truthy)
-        return self.evaluate(expr.falsy)
-
-
     def visit_variable_expr(self, expr: Variable) -> object:
         return self.environment.get(expr.name)
-
-
-    def visit_assign_expr(self, expr: Assign) -> object:
-        value = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
-        return value
-
 
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
 
+    def visit_block_stmt(self, stmt: Block):
+        self.execute_block(stmt.statements, Environment(self.environment))
+        return None
+
+    def visit_expression_stmt(self, stmt: Expression):
+        value = self.evaluate(stmt.expression)
+        if self.is_repl:
+            print(self.stringify(value))
+
+    def visit_print_stmt(self, stmt: Print):
+        value = self.evaluate(stmt.expression)
+        print(self.stringify(value))
+
+    def visit_var_stmt(self, stmt: Var):
+        value = None
+        if stmt.initializer is not None:
+            value = self.evaluate(stmt.initializer)
+
+        self.environment.define(stmt.name.lexeme, value)
 
     def execute(self, stmt: Stmt):
         stmt.accept(self)
-
 
     def execute_block(self, statements: list[Stmt], environment: Environment):
         previous = self.environment
@@ -121,34 +129,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         finally:
             self.environment = previous
 
-
-    def visit_expression_stmt(self, stmt: Expression):
-        value = self.evaluate(stmt.expression)
-        if self.is_repl:
-            print(self.stringify(value))
-        return None
-
-
-    def visit_print_stmt(self, stmt: Print):
-        value = self.evaluate(stmt.expression)
-        print(self.stringify(value))
-        return None
-
-
-    def visit_var_stmt(self, stmt: Var):
-        value = None
-        if stmt.initializer is not None:
-            value = self.evaluate(stmt.initializer)
-
-        self.environment.define(stmt.name.lexeme, value)
-        return None
-
-
-    def visit_block_stmt(self, stmt: Block):
-        self.execute_block(stmt.statements, Environment(self.environment))
-        return None
-
-
     def is_truthy(self, obj: object) -> bool:
         if obj is None:
             return False
@@ -156,22 +136,18 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             return obj
         return True
 
-
     def is_equal(self, a: object, b: object) -> bool:
         return a == b
-
 
     def check_number_operand(self, operator: Token, operand: object):
         if isinstance(operand, float):
             return
         raise RuntimeException(operator, "Operand must be a number.")
 
-
     def check_number_operands(self, operator: Token, left: object, right: object):
         if isinstance(left, float) and isinstance(right, float):
             return
         raise RuntimeException(operator, "Operands must be numbers.")
-
 
     def stringify(self, obj: object) -> str:
         if obj is None:

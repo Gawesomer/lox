@@ -1,4 +1,4 @@
-from expr import Expr, Binary, Grouping, Literal, Unary, Ternary
+from expr import Binary, Expr, Grouping, Literal, Unary, Ternary
 from token import Token
 from token_type import TokenType
 
@@ -8,20 +8,16 @@ class ReversePolishNotation(Expr.Visitor):
     def print(self, expr: Expr) -> str:
         return expr.accept(self)
 
-
     def visit_binary_expr(self, expr: Binary) -> str:
         return "{} {} {}".format(expr.left.accept(self), expr.right.accept(self), expr.operator.lexeme)
-
 
     def visit_grouping_expr(self, expr: Grouping) -> str:
         return expr.expression.accept(self)
 
-
     def visit_literal_expr(self, expr: Literal) -> str:
-        if expr.value == None:
+        if expr.value is None:
             return "nil"
         return str(expr.value)
-
 
     def visit_unary_expr(self, expr: Unary) -> str:
         return "{}{}".format(expr.operator.lexeme, expr.right.accept(self))

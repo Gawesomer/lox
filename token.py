@@ -9,6 +9,5 @@ class Token:
         self.literal = literal
         self.line = line
 
-
     def __str__(self):
         return "{} {} {}".format(self.type, self.lexeme, self.literal)
