@@ -16,18 +16,18 @@ class Lox:
 
     @classmethod
     def main(cls):
-        _interpreter = Interpreter(cls)
         if len(sys.argv) > 2:
           print("Usage: jlox [script]")
           exit(1)
         elif len(sys.argv) == 2:
-          cls.run_file(sys.argv[1], _interpreter)
+          cls.run_file(sys.argv[1])
         else:
-          cls.run_prompt(_interpreter)
+          cls.run_prompt()
 
 
     @classmethod
-    def run_file(cls, filename: str, _interpreter: Interpreter):
+    def run_file(cls, filename: str):
+        _interpreter = Interpreter(cls)
         with open(filename, 'r') as f:
             code = f.read()
             cls.run(code, _interpreter)
@@ -38,7 +38,8 @@ class Lox:
 
 
     @classmethod
-    def run_prompt(cls, _interpreter: Interpreter):
+    def run_prompt(cls):
+        _interpreter = Interpreter(cls, is_repl=True)
         while True:
             try:
                 line = input("> ")
@@ -52,16 +53,12 @@ class Lox:
     def run(cls, source: str, _interpreter: Interpreter):
         scanner = Scanner(cls, source)
         tokens = scanner.scan_tokens()
-        for token in tokens:
-            print(token)
         parser = Parser(cls, tokens)
         statements = parser.parse()
 
         # Stop if there was a syntax error.
         if cls.had_error:
             return
-
-        # print(ASTPrinter().print(expression))
 
         _interpreter.interpret(statements)
 

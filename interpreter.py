@@ -9,18 +9,17 @@ from token_type import TokenType
 class Interpreter(Expr.Visitor, Stmt.Visitor):
 
 
-    def __init__(self, reporter: "Lox"):
+    def __init__(self, reporter: "Lox", is_repl: bool = False):
         super().__init__()
         self.reporter = reporter
         self.environment = Environment()
+        self.is_repl = is_repl
 
 
     def interpret(self, statements: list[Stmt]):
         try:
             for statement in statements:
                 self.execute(statement)
-            # value = self.evaluate(expression)
-            # print(self.stringify(value))
         except RuntimeException as error:
             self.reporter.runtime_error(error)
 
@@ -124,7 +123,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
 
     def visit_expression_stmt(self, stmt: Expression):
-        self.evaluate(stmt.expression)
+        value = self.evaluate(stmt.expression)
+        if self.is_repl:
+            print(self.stringify(value))
         return None
 
 
