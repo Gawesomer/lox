@@ -30,7 +30,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         left = self.evaluate(expr.left)
         right = self.evaluate(expr.right)
 
-        if expr.operator.type == TokenType.EQUAL_EQUAL:
+        if expr.operator.type == TokenType.COMMA:
+            return right
+        elif expr.operator.type == TokenType.EQUAL_EQUAL:
             return self.is_equal(left, right)
         elif expr.operator.type == TokenType.BANG_EQUAL:
             return not self.is_equal(left, right)
