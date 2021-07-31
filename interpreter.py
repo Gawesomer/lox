@@ -113,11 +113,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         print(self.stringify(value))
 
     def visit_var_stmt(self, stmt: Var):
-        value = None
         if stmt.initializer is not None:
             value = self.evaluate(stmt.initializer)
-
-        self.environment.define(stmt.name.lexeme, value)
+            self.environment.initialize(stmt.name.lexeme, value)
+        self.environment.define(stmt.name.lexeme)
 
     def execute(self, stmt: Stmt):
         stmt.accept(self)
