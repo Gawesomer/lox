@@ -1,5 +1,5 @@
 from environment import Environment
-from expr import Assign, Binary, Expr, Grouping, Literal, Ternary, Unary, Variable
+from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from runtime_exception import RuntimeException
 from stmt import Block, Expression, If, Print, Stmt, Var
 from token import Token
@@ -74,6 +74,18 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_literal_expr(self, expr: Literal) -> object:
         return expr.value
+
+    def visit_logical_expr(self, expr: Logical) -> object:
+        left = self.evaluate(expr.left)
+
+        if expr.operator.type == TokenType.OR:
+            if self.is_truthy(left):
+                return left
+        else:
+            if not self.is_truthy(left):
+                return left
+
+        return self.evaluate(expr.right)
 
     def visit_ternary_expr(self, expr: Ternary) -> object:
         conditional = self.evaluate(expr.conditional)

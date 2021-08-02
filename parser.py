@@ -1,4 +1,4 @@
-from expr import Assign, Binary, Expr, Grouping, Literal, Ternary, Unary, Variable
+from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from stmt import Block, Expression, If, Print, Stmt, Var
 from token import Token
 from token_type import TokenType
@@ -26,7 +26,9 @@ class Parser:
         assignment     → IDENTIFIER "=" assignment
                        | inv_ternary ;
         inv_ternary    → ( "?" | ":" ) ternary ;
-        ternary        → inv_equality ( "?" inv_equality ":" inv_equality )* ;
+        ternary        → logic_or ( "?" logic_or ":" logic_or )* ;
+        logic_or       → logic_and ( "or" logic_and )* ;
+        logic_and      → inv_equality ( "and" inv_equality )* ;
         inv_equality   → ( "==" | "!=" ) equality ;
         equality       → inv_comparison ( ( "!=" | "==" ) inv_comparison )* ;
         inv_comparison → ( ">" | ">=" | "<" | "<=" ) comparison ;
@@ -160,17 +162,37 @@ class Parser:
         return self.ternary()
 
     def ternary(self) -> Expr:
-        expression = self.inv_equality()
+        expression = self.logic_or()
 
         while self.match(TokenType.EROTEME):
-            truthy = self.inv_equality()
+            truthy = self.logic_or()
             if self.match(TokenType.COLON):
-                falsy = self.inv_equality()
+                falsy = self.logic_or()
                 expression = Ternary(expression, truthy, falsy)
             else:
                 raise self.error(self.peek(), "Expect ':'.")
 
         return expression
+
+    def logic_or(self) -> Expr:
+        expr = self.logic_and()
+
+        while self.match(TokenType.OR):
+            operator = self.previous()
+            right = self.logic_and()
+            expr = Logical(expr, operator, right)
+
+        return expr
+
+    def logic_and(self) -> Expr:
+        expr = self.inv_equality()
+
+        while self.match(TokenType.AND):
+            operator = self.previous()
+            right = self.inv_equality()
+            expr = Logical(expr, operator, right)
+
+        return expr
 
     def inv_equality(self) -> Expr:
         if self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
