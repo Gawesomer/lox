@@ -1,5 +1,5 @@
 from expr import Assign, Binary, Expr, Grouping, Literal, Ternary, Unary, Variable
-from stmt import Block, Expression, Print, Stmt, Var
+from stmt import Block, Expression, If, Print, Stmt, Var
 from token import Token
 from token_type import TokenType
 
@@ -12,8 +12,11 @@ class Parser:
                        | statement ;
         var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → expr_stmt
+                       | if_stmt
                        | print_stmt
                        | block ;
+        if_stmt        → "if" "(" expression ")" statement
+                       ( "else" statement )? ;
         expr_stmt      → expression ";" ;
         print_stmt     → "print" expression ";" ;
         block          → "{" declaration* "}" ;
@@ -74,12 +77,26 @@ class Parser:
         return Var(name, initializer)
 
     def statement(self) -> Stmt:
+        if self.match(TokenType.IF):
+            return self.if_statement()
         if self.match(TokenType.PRINT):
             return self.print_statement()
         if self.match(TokenType.LEFT_BRACE):
             return Block(self.block())
 
         return self.expression_statement()
+
+    def if_statement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+        condition = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.")
+
+        then_branch = self.statement()
+        else_branch = None
+        if self.match(TokenType.ELSE):
+            else_branch = self.statement()
+
+        return If(condition, then_branch, else_branch)
 
     def print_statement(self) -> Stmt:
         value = self.expression()

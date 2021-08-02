@@ -1,7 +1,7 @@
 from environment import Environment
 from expr import Assign, Binary, Expr, Grouping, Literal, Ternary, Unary, Variable
 from runtime_exception import RuntimeException
-from stmt import Block, Expression, Print, Stmt, Var
+from stmt import Block, Expression, If, Print, Stmt, Var
 from token import Token
 from token_type import TokenType
 
@@ -107,6 +107,13 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         value = self.evaluate(stmt.expression)
         if self.is_repl:
             print(self.stringify(value))
+
+    def visit_if_stmt(self, stmt: If):
+        if self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.then_branch)
+        elif stmt.else_branch is not None:
+            self.execute(stmt.else_branch)
+        return None
 
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
