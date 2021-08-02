@@ -20,11 +20,11 @@ class Parser:
         expr_stmt      → expression ";" ;
         print_stmt     → "print" expression ";" ;
         block          → "{" declaration* "}" ;
-        expression     → assignment ;
-        assignment     → IDENTIFIER "=" assignment
-                       | inv_comma ;
+        expression     → inv_comma ;
         inv_comma      → "," comma ;
-        comma          → inv_ternary ("," inv_ternary )* ;
+        comma          → assignment ("," assignment )* ;
+        assignment     → IDENTIFIER "=" assignment
+                       | inv_ternary ;
         inv_ternary    → ( "?" | ":" ) ternary ;
         ternary        → inv_equality ( "?" inv_equality ":" inv_equality )* ;
         inv_equality   → ( "==" | "!=" ) equality ;
@@ -118,10 +118,27 @@ class Parser:
         return Expression(expr)
 
     def expression(self) -> Expr:
-        return self.assignment()
+        return self.inv_comma()
+
+    def inv_comma(self) -> Expr:
+        if self.match(TokenType.COMMA):
+            self.error(self.peek(), "Comma operator without left-hand operand.")
+            invalid_expression = self.comma()
+
+        return self.comma()
+
+    def comma(self) -> Expr:
+        expression = self.assignment()
+
+        while self.match(TokenType.COMMA):
+            operator = self.previous()
+            right = self.assignment()
+            expression = Binary(expression, operator, right)
+
+        return expression
 
     def assignment(self) -> Expr:
-        expr = self.inv_comma()
+        expr = self.inv_ternary()
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
@@ -134,23 +151,6 @@ class Parser:
             self.error(equals, "Invalid assignment target.")
 
         return expr
-
-    def inv_comma(self) -> Expr:
-        if self.match(TokenType.COMMA):
-            self.error(self.peek(), "Comma operator without left-hand operand.")
-            invalid_expression = self.comma()
-
-        return self.comma()
-
-    def comma(self) -> Expr:
-        expression = self.inv_ternary()
-
-        while self.match(TokenType.COMMA):
-            operator = self.previous()
-            right = self.inv_ternary()
-            expression = Binary(expression, operator, right)
-
-        return expression
 
     def inv_ternary(self) -> Expr:
         if self.match(TokenType.EROTEME, TokenType.COLON):
