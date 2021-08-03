@@ -1,7 +1,7 @@
 from environment import Environment
 from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from runtime_exception import RuntimeException
-from stmt import Block, Expression, If, Print, Stmt, Var
+from stmt import Block, Expression, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -136,6 +136,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             value = self.evaluate(stmt.initializer)
             self.environment.initialize(stmt.name.lexeme, value)
         self.environment.define(stmt.name.lexeme)
+
+    def visit_while_stmt(self, stmt: While):
+        while self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.body)
 
     def execute(self, stmt: Stmt):
         stmt.accept(self)

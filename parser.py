@@ -1,5 +1,5 @@
 from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
-from stmt import Block, Expression, If, Print, Stmt, Var
+from stmt import Block, Expression, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -14,11 +14,13 @@ class Parser:
         statement      → expr_stmt
                        | if_stmt
                        | print_stmt
+                       | while_stmt
                        | block ;
         if_stmt        → "if" "(" expression ")" statement
                        ( "else" statement )? ;
         expr_stmt      → expression ";" ;
         print_stmt     → "print" expression ";" ;
+        while_stmt     → "while" "(" expression ")" statement ;
         block          → "{" declaration* "}" ;
         expression     → inv_comma ;
         inv_comma      → "," comma ;
@@ -83,6 +85,8 @@ class Parser:
             return self.if_statement()
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.WHILE):
+            return self.while_statement()
         if self.match(TokenType.LEFT_BRACE):
             return Block(self.block())
 
@@ -104,6 +108,14 @@ class Parser:
         value = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+
+    def while_statement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        condition = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.")
+        body = self.statement()
+
+        return While(condition, body)
 
     def block(self) -> list[Stmt]:
         statements = []
