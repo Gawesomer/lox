@@ -1,5 +1,5 @@
 from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
-from stmt import Block, Expression, If, Print, Stmt, Var, While
+from stmt import Block, Break, Expression, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -16,6 +16,7 @@ class Parser:
                        | if_stmt
                        | print_stmt
                        | while_stmt
+                       | break_stmt
                        | block ;
         expr_stmt      → expression ";" ;
         for_stmt       → "for" "(" ( var_decl | expr_stmt | ";" )
@@ -25,10 +26,11 @@ class Parser:
                        ( "else" statement )? ;
         print_stmt     → "print" expression ";" ;
         while_stmt     → "while" "(" expression ")" statement ;
+        break_stmt     → "break" ";" ;
         block          → "{" declaration* "}" ;
         expression     → inv_comma ;
         inv_comma      → "," comma ;
-        comma          → assignment ("," assignment )* ;
+        comma          → assignment ( "," assignment )* ;
         assignment     → IDENTIFIER "=" assignment
                        | inv_ternary ;
         inv_ternary    → ( "?" | ":" ) ternary ;
@@ -57,6 +59,7 @@ class Parser:
         self.reporter = reporter
         self.tokens = tokens
         self.current = 0
+        self.is_in_loop = 0
 
     def parse(self) -> list[Stmt]:
         statements = []
@@ -93,6 +96,8 @@ class Parser:
             return self.print_statement()
         if self.match(TokenType.WHILE):
             return self.while_statement()
+        if self.match(TokenType.BREAK):
+            return self.break_statement()
         if self.match(TokenType.LEFT_BRACE):
             return Block(self.block())
 
@@ -118,7 +123,10 @@ class Parser:
         if not self.check(TokenType.RIGHT_PAREN):
             increment = self.expression()
         self.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        self.is_in_loop += 1
         body = self.statement();
+        self.is_in_loop -= 1
 
         if increment is not None:
             body = Block([body, Expression(increment)])
@@ -153,9 +161,18 @@ class Parser:
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
         condition = self.expression()
         self.consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.")
+        self.is_in_loop += 1
         body = self.statement()
+        self.is_in_loop -= 1
 
         return While(condition, body)
+
+    def break_statement(self) -> Stmt:
+        if not self.is_in_loop:
+            raise self.error(self.previous(), "Break statement outside of enclosing loop.")
+        break_stmt = Break(self.previous())
+        self.consume(TokenType.SEMICOLON, "Expect ';' after break.")
+        return break_stmt
 
     def block(self) -> list[Stmt]:
         statements = []

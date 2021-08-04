@@ -1,5 +1,5 @@
 from token import Token
-from runtime_exception import RuntimeException
+from exception import RuntimeException
 
 
 class Environment:

@@ -6,6 +6,7 @@ class Scanner:
 
     keywords = {
         "and": TokenType.AND,
+        "break": TokenType.BREAK,
         "class": TokenType.CLASS,
         "else": TokenType.ELSE,
         "false": TokenType.FALSE,

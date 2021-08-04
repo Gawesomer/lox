@@ -1,7 +1,7 @@
 from environment import Environment
 from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
-from runtime_exception import RuntimeException
-from stmt import Block, Expression, If, Print, Stmt, Var, While
+from exception import BreakUnwindStackException, RuntimeException
+from stmt import Block, Break, Expression, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -113,7 +113,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_block_stmt(self, stmt: Block):
         self.execute_block(stmt.statements, Environment(self.environment))
-        return None
+
+    def visit_break_stmt(self, stmt: Break):
+        raise BreakUnwindStackException("Unwinding stack to break out of loop.")
 
     def visit_expression_stmt(self, stmt: Expression):
         value = self.evaluate(stmt.expression)
@@ -125,7 +127,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             self.execute(stmt.then_branch)
         elif stmt.else_branch is not None:
             self.execute(stmt.else_branch)
-        return None
 
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
@@ -139,7 +140,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_while_stmt(self, stmt: While):
         while self.is_truthy(self.evaluate(stmt.condition)):
-            self.execute(stmt.body)
+            try:
+                self.execute(stmt.body)
+            except BreakUnwindStackException:
+                return
 
     def execute(self, stmt: Stmt):
         stmt.accept(self)

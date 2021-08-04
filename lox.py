@@ -3,7 +3,7 @@ import sys
 from ast_printer import ASTPrinter
 from interpreter import Interpreter
 from parser import Parser
-from runtime_exception import RuntimeException
+from exception import RuntimeException
 from scanner import Scanner
 from token import Token
 from token_type import TokenType

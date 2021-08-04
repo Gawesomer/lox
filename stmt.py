@@ -8,6 +8,9 @@ class Stmt:
         def visit_block_stmt(self, stmt: 'Block'):
             raise NotImplementedError
 
+        def visit_break_stmt(self, stmt: 'Break'):
+            raise NotImplementedError
+
         def visit_expression_stmt(self, stmt: 'Expression'):
             raise NotImplementedError
 
@@ -34,6 +37,14 @@ class Block(Stmt):
 
     def accept(self, visitor):
         return visitor.visit_block_stmt(self)
+
+
+class Break(Stmt):
+    def __init__(self, keyword: Token):
+        self.keyword = keyword
+
+    def accept(self, visitor):
+        return visitor.visit_break_stmt(self)
 
 
 class Expression(Stmt):
