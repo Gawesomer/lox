@@ -1,4 +1,4 @@
-from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from stmt import Block, Break, Expression, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
@@ -45,8 +45,9 @@ class Parser:
         term           → inv_factor ( ( "-" | "+" ) inv_factor )* ;
         inv_factor     → ( "/" | "*" ) factory ;
         factor         → unary ( ( "/" | "*" ) unary )* ;
-        unary          → ( "!" | "-" ) unary
-                       | primary ;
+        unary          → ( "!" | "-" ) unary | call ;
+        call           → primary ( "(" arguments? ")" )* ;
+        arguments      → expression ( "," expression )* ;
         primary        → NUMBER | STRING | "true" | "false" | "nil"
                        | "(" expression ")"
                        | IDENTIFIER ;
@@ -337,7 +338,31 @@ class Parser:
             right = self.unary()
             return Unary(operator, right)
 
-        return self.primary()
+        return self.call()
+
+    def call(self) -> Expr:
+        expr = self.primary()
+
+        while True:
+            if self.match(TokenType.LEFT_PAREN):
+                expr = self.finish_call(expr)
+            else:
+                break
+
+        return expr
+
+    def finish_call(self, callee: Expr) -> Expr:
+        arguments = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            arguments.append(self.expression())
+            while self.match(TokenType.COMMA):
+                if len(arguments) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 arguments.")
+                arguments.append(self.expression)
+
+        paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+
+        return Call(callee, paren, arguments)
 
     def primary(self) -> Expr:
         if self.match(TokenType.FALSE):
