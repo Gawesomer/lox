@@ -1,5 +1,6 @@
+from lox_callable import Callable
 from environment import Environment
-from expr import Assign, Binary, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from exception import BreakUnwindStackException, RuntimeException
 from stmt import Block, Break, Expression, If, Print, Stmt, Var, While
 from token import Token
@@ -68,6 +69,24 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         # Unreachable.
         return None
+
+    def visit_call_expr(self, expr: Call) -> object:
+        callee = self.evaluate(expr.callee)
+
+        arguments = []
+        for argument in expr.arguments:
+            arguments.append(self.evalute(argument))
+
+        if not isinstance(callee, Callable):
+            raise RuntimeException(expr.paren, "Can only call functions and classes.")
+
+        function = Callable(callee)
+        if len(arguments) != function.arity():
+            raise RuntimeException(
+                expr.paren,
+                "Expected {} arguments but got {}.".format(function.arity(), len(arguments))
+            )
+        return function.call(self, arguments)
 
     def visit_grouping_expr(self, expr: Grouping) -> object:
         return self.evaluate(expr.expression)
