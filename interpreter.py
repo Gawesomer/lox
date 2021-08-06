@@ -1,4 +1,4 @@
-from lox_callable import Callable
+from lox_callable import Callable, Clock
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from exception import BreakUnwindStackException, RuntimeException
@@ -12,8 +12,11 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def __init__(self, reporter: "Lox", is_repl: bool = False):
         super().__init__()
         self.reporter = reporter
-        self.environment = Environment()
         self.is_repl = is_repl
+        self.globals = Environment()
+        self.environment = self.globals
+
+        self.globals.initialize("clock", Clock())
 
     def interpret(self, statements: list[Stmt]):
         try:
@@ -75,12 +78,12 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         arguments = []
         for argument in expr.arguments:
-            arguments.append(self.evalute(argument))
+            arguments.append(self.evaluate(argument))
 
         if not isinstance(callee, Callable):
             raise RuntimeException(expr.paren, "Can only call functions and classes.")
 
-        function = Callable(callee)
+        function = callee
         if len(arguments) != function.arity():
             raise RuntimeException(
                 expr.paren,
