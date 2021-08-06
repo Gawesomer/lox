@@ -1,5 +1,5 @@
 from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
-from stmt import Block, Break, Expression, Function, If, Print, Stmt, Var, While
+from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -19,6 +19,7 @@ class Parser:
                        | for_stmt
                        | if_stmt
                        | print_stmt
+                       | return_stmt
                        | while_stmt
                        | break_stmt
                        | block ;
@@ -29,6 +30,7 @@ class Parser:
         if_stmt        → "if" "(" expression ")" statement
                        ( "else" statement )? ;
         print_stmt     → "print" expression ";" ;
+        return_stmt    → "return" expression? ";" ;
         while_stmt     → "while" "(" expression ")" statement ;
         break_stmt     → "break" ";" ;
         block          → "{" declaration* "}" ;
@@ -117,6 +119,8 @@ class Parser:
             return self.if_statement()
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.RETURN):
+            return self.return_statement()
         if self.match(TokenType.WHILE):
             return self.while_statement()
         if self.match(TokenType.BREAK):
@@ -179,6 +183,15 @@ class Parser:
         value = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(value)
+
+    def return_statement(self) -> Stmt:
+        keyword = self.previous()
+        value = None
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+
+        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        return Return(keyword, value)
 
     def while_statement(self) -> Stmt:
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")

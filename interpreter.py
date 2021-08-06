@@ -1,9 +1,9 @@
 from lox_callable import Callable, Clock
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
-from exception import BreakUnwindStackException, RuntimeException
+from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
-from stmt import Block, Break, Expression, Function, If, Print, Stmt, Var, While
+from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -158,6 +158,13 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
+
+    def visit_return_stmt(self, stmt: Return):
+        value = None
+        if stmt.value is not None:
+            value = self.evaluate(stmt.value)
+
+        raise ReturnException(value)
 
     def visit_var_stmt(self, stmt: Var):
         if stmt.initializer is not None:
