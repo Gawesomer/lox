@@ -146,7 +146,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             print(self.stringify(value))
 
     def visit_function_stmt(self, stmt: Function):
-        function = LoxFunction(stmt)
+        function = LoxFunction(stmt, self.environment)
         self.environment.initialize(stmt.name.lexeme, function)
 
     def visit_if_stmt(self, stmt: If):

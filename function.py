@@ -6,14 +6,15 @@ from stmt import Function
 
 class LoxFunction(Callable):
 
-    def __init__(self, declaration: Function):
+    def __init__(self, declaration: Function, closure: Environment):
         self.declaration = declaration
+        self.closure = closure
 
     def arity(self) -> int:
         return len(self.declaration.params)
 
     def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
-        environment = Environment(interpreter.globals)
+        environment = Environment(self.closure)
         for i in range(len(self.declaration.params)):
             environment.initialize(self.declaration.params[i].lexeme, arguments[i])
 
