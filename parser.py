@@ -1,5 +1,5 @@
 from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
-from stmt import Block, Break, Expression, If, Print, Stmt, Var, While
+from stmt import Block, Break, Expression, Function, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -8,8 +8,12 @@ class Parser:
     """
     Expression grammar:
         program        → declaration* EOF ;
-        declaration    → var_decl
+        declaration    → fun_decl
+                       | var_decl
                        | statement ;
+        fun_decl       → "fun" function ;
+        function       → IDENTIFIER "(" parameters? ")" block ;
+        parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
         var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → expr_stmt
                        | for_stmt
@@ -47,7 +51,7 @@ class Parser:
         factor         → unary ( ( "/" | "*" ) unary )* ;
         unary          → ( "!" | "-" ) unary | call ;
         call           → primary ( "(" arguments? ")" )* ;
-        arguments      → expression ( "," expression )* ;
+        arguments      → assignment ( "," assignment )* ;
         primary        → NUMBER | STRING | "true" | "false" | "nil"
                        | "(" expression ")"
                        | IDENTIFIER ;
@@ -71,12 +75,30 @@ class Parser:
 
     def declaration(self) -> Stmt:
         try:
+            if self.match(TokenType.FUN):
+                return self.function("function")
             if self.match(TokenType.VAR):
                 return self.var_declaration()
             return self.statement()
         except self.ParseException:
             self.synchronize()
             return None
+
+    def function(self, kind: str) -> Stmt:
+        name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after {} name.".format(kind))
+        parameters = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+            while self.match(TokenType.COMMA):
+                if len(parameters) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters.")
+                parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+
+        self.consume(TokenType.LEFT_BRACE, "Expect '{}' before the {} body.".format('{', kind))
+        body = self.block()
+        return Function(name, parameters, body)
 
     def var_declaration(self) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -354,11 +376,11 @@ class Parser:
     def finish_call(self, callee: Expr) -> Expr:
         arguments = []
         if not self.check(TokenType.RIGHT_PAREN):
-            arguments.append(self.expression())
+            arguments.append(self.assignment())
             while self.match(TokenType.COMMA):
                 if len(arguments) >= 255:
                     self.error(self.peek(), "Can't have more than 255 arguments.")
-                arguments.append(self.expression)
+                arguments.append(self.assignment())
 
         paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
 

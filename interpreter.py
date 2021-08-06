@@ -2,7 +2,8 @@ from lox_callable import Callable, Clock
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
 from exception import BreakUnwindStackException, RuntimeException
-from stmt import Block, Break, Expression, If, Print, Stmt, Var, While
+from function import LoxFunction
+from stmt import Block, Break, Expression, Function, If, Print, Stmt, Var, While
 from token import Token
 from token_type import TokenType
 
@@ -143,6 +144,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         value = self.evaluate(stmt.expression)
         if self.is_repl:
             print(self.stringify(value))
+
+    def visit_function_stmt(self, stmt: Function):
+        function = LoxFunction(stmt)
+        self.environment.initialize(stmt.name.lexeme, function)
 
     def visit_if_stmt(self, stmt: If):
         if self.is_truthy(self.evaluate(stmt.condition)):

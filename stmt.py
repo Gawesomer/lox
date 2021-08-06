@@ -14,6 +14,9 @@ class Stmt:
         def visit_expression_stmt(self, stmt: 'Expression'):
             raise NotImplementedError
 
+        def visit_function_stmt(self, stmt: 'Function'):
+            raise NotImplementedError
+
         def visit_if_stmt(self, stmt: 'If'):
             raise NotImplementedError
 
@@ -53,6 +56,16 @@ class Expression(Stmt):
 
     def accept(self, visitor):
         return visitor.visit_expression_stmt(self)
+
+
+class Function(Stmt):
+    def __init__(self, name: Token, params: list[Token], body: list[Stmt]):
+        self.name = name
+        self.params = params
+        self.body = body
+
+    def accept(self, visitor):
+        return visitor.visit_function_stmt(self)
 
 
 class If(Stmt):
