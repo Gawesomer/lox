@@ -1,6 +1,6 @@
 from lox_callable import Callable, Clock
 from environment import Environment
-from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
 from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
 from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
@@ -95,6 +95,11 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_grouping_expr(self, expr: Grouping) -> object:
         return self.evaluate(expr.expression)
 
+    def visit_lambda_expr(self, expr: Lambda) -> object:
+        stmt = Function(None, expr.params, expr.body)
+        function = LoxFunction(stmt, self.environment)
+        return function
+
     def visit_literal_expr(self, expr: Literal) -> object:
         return expr.value
 
@@ -149,7 +154,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         function = LoxFunction(stmt, self.environment)
         if stmt.name is not None:
             self.environment.initialize(stmt.name.lexeme, function)
-        return function
 
     def visit_if_stmt(self, stmt: If):
         if self.is_truthy(self.evaluate(stmt.condition)):

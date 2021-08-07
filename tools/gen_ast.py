@@ -18,6 +18,7 @@ class GenerateAST:
                 "Binary   ; left: Expr, operator: Token, right: Expr",
                 "Call     ; callee: Expr, paren: Token, arguments: list[Expr]",
                 "Grouping ; expression: Expr",
+                "Lambda   ; params: list[Token], body: list['Stmt']",
                 "Literal  ; value: object",
                 "Logical  ; left: Expr, operator: Token, right: Expr",
                 "Unary    ; operator: Token, right: Expr",

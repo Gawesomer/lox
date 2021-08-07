@@ -1,4 +1,4 @@
-from expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
 from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
 from token import Token
 from token_type import TokenType
@@ -11,8 +11,8 @@ class Parser:
         declaration    → fun_decl
                        | var_decl
                        | statement ;
-        fun_decl       → "fun" function ;
-        function       → IDENTIFIER? "(" parameters? ")" block ;
+        fun_decl       → "fun" IDENTIFIER function ;
+        function       → "(" parameters? ")" block ;
         parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
         var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → expr_stmt
@@ -39,7 +39,8 @@ class Parser:
         comma          → assignment ( "," assignment )* ;
         assignment     → IDENTIFIER "=" assignment
                        | inv_ternary
-                       | fun_decl ;
+                       | lambda ;
+        lambda         → "fun" function ;
         inv_ternary    → ( "?" | ":" ) ternary ;
         ternary        → logic_or ( "?" logic_or ":" logic_or )* ;
         logic_or       → logic_and ( "or" logic_and )* ;
@@ -78,8 +79,9 @@ class Parser:
 
     def declaration(self) -> Stmt:
         try:
-            if self.match(TokenType.FUN):
-                return self.function("function")
+            if self.check(TokenType.FUN) and not self.check_next(TokenType.LEFT_PAREN):
+                self.advance()  # Consume "fun" token.
+                return self.function_declaration("function")
             if self.match(TokenType.VAR):
                 return self.var_declaration()
             return self.statement()
@@ -87,10 +89,12 @@ class Parser:
             self.synchronize()
             return None
 
-    def function(self, kind: str) -> Stmt:
-        name = None
-        if not self.check(TokenType.LEFT_PAREN):
-            name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
+    def function_declaration(self, kind: str) -> Stmt:
+        name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
+        parameters, body = self.function(kind)
+        return Function(name, parameters, body)
+
+    def function(self, kind: str) -> (list[Token], list[Stmt]):
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after {} declaration.".format(kind))
         parameters = []
         if not self.check(TokenType.RIGHT_PAREN):
@@ -103,7 +107,7 @@ class Parser:
 
         self.consume(TokenType.LEFT_BRACE, "Expect '{}' before the {} body.".format('{', kind))
         body = self.block()
-        return Function(name, parameters, body)
+        return (parameters, body)
 
     def var_declaration(self) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -249,7 +253,8 @@ class Parser:
 
     def assignment(self) -> Expr:
         if self.match(TokenType.FUN):
-            return self.function("function")
+            parameters, body = self.function("function")
+            return Lambda(parameters, body)
 
         expr = self.inv_ternary()
 
@@ -444,6 +449,11 @@ class Parser:
         if self.is_at_end():
             return False
         return self.peek().type == token_type
+
+    def check_next(self, token_type: TokenType) -> bool:
+        if self.current+1 >= len(self.tokens):
+            return False
+        return self.tokens[self.current+1].type == token_type
 
     def advance(self) -> Token:
         if not self.is_at_end():

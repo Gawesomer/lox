@@ -16,6 +16,9 @@ class Expr:
         def visit_grouping_expr(self, expr: 'Grouping'):
             raise NotImplementedError
 
+        def visit_lambda_expr(self, expr: 'Lambda'):
+            raise NotImplementedError
+
         def visit_literal_expr(self, expr: 'Literal'):
             raise NotImplementedError
 
@@ -71,6 +74,15 @@ class Grouping(Expr):
 
     def accept(self, visitor):
         return visitor.visit_grouping_expr(self)
+
+
+class Lambda(Expr):
+    def __init__(self, params: list[Token], body: list['Stmt']):
+        self.params = params
+        self.body = body
+
+    def accept(self, visitor):
+        return visitor.visit_lambda_expr(self)
 
 
 class Literal(Expr):
