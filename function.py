@@ -24,4 +24,6 @@ class LoxFunction(Callable):
             return return_value.value
 
     def __str__(self) -> str:
-        return "<fn {}>".format(self.declaration.name.lexeme)
+        if self.declaration.name is not None:
+            return "<fn {}>".format(self.declaration.name.lexeme)
+        return "<fn -lambda->"

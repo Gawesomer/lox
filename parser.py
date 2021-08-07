@@ -12,7 +12,7 @@ class Parser:
                        | var_decl
                        | statement ;
         fun_decl       → "fun" function ;
-        function       → IDENTIFIER "(" parameters? ")" block ;
+        function       → IDENTIFIER? "(" parameters? ")" block ;
         parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
         var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
         statement      → expr_stmt
@@ -38,7 +38,8 @@ class Parser:
         inv_comma      → "," comma ;
         comma          → assignment ( "," assignment )* ;
         assignment     → IDENTIFIER "=" assignment
-                       | inv_ternary ;
+                       | inv_ternary
+                       | fun_decl ;
         inv_ternary    → ( "?" | ":" ) ternary ;
         ternary        → logic_or ( "?" logic_or ":" logic_or )* ;
         logic_or       → logic_and ( "or" logic_and )* ;
@@ -87,8 +88,10 @@ class Parser:
             return None
 
     def function(self, kind: str) -> Stmt:
-        name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
-        self.consume(TokenType.LEFT_PAREN, "Expect '(' after {} name.".format(kind))
+        name = None
+        if not self.check(TokenType.LEFT_PAREN):
+            name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after {} declaration.".format(kind))
         parameters = []
         if not self.check(TokenType.RIGHT_PAREN):
             parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
@@ -245,6 +248,9 @@ class Parser:
         return expression
 
     def assignment(self) -> Expr:
+        if self.match(TokenType.FUN):
+            return self.function("function")
+
         expr = self.inv_ternary()
 
         if self.match(TokenType.EQUAL):

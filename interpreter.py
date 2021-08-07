@@ -147,7 +147,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_function_stmt(self, stmt: Function):
         function = LoxFunction(stmt, self.environment)
-        self.environment.initialize(stmt.name.lexeme, function)
+        if stmt.name is not None:
+            self.environment.initialize(stmt.name.lexeme, function)
+        return function
 
     def visit_if_stmt(self, stmt: If):
         if self.is_truthy(self.evaluate(stmt.condition)):
