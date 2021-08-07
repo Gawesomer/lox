@@ -176,7 +176,8 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         if stmt.initializer is not None:
             value = self.evaluate(stmt.initializer)
             self.environment.initialize(stmt.name.lexeme, value)
-        self.environment.define(stmt.name.lexeme)
+        else:
+            self.environment.define(stmt.name.lexeme)
 
     def visit_while_stmt(self, stmt: While):
         while self.is_truthy(self.evaluate(stmt.condition)):
