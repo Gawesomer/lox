@@ -42,7 +42,7 @@ class Parser:
                        | lambda ;
         lambda         → "fun" function ;
         inv_ternary    → ( "?" | ":" ) ternary ;
-        ternary        → logic_or ( "?" logic_or ":" logic_or )* ;
+        ternary        → logic_or ( "?" ternary ":" ternary )* ;
         logic_or       → logic_and ( "or" logic_and )* ;
         logic_and      → inv_equality ( "and" inv_equality )* ;
         inv_equality   → ( "==" | "!=" ) equality ;
@@ -281,9 +281,9 @@ class Parser:
         expression = self.logic_or()
 
         while self.match(TokenType.EROTEME):
-            truthy = self.logic_or()
+            truthy = self.ternary()
             if self.match(TokenType.COLON):
-                falsy = self.logic_or()
+                falsy = self.ternary()
                 expression = Ternary(expression, truthy, falsy)
             else:
                 raise self.error(self.peek(), "Expect ':'.")
