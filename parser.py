@@ -445,11 +445,6 @@ class Parser:
             return False
         return self.peek().type == token_type
 
-    def check_next_next(self, token_type: TokenType) -> bool:
-        if self.current+2 >= len(self.tokens):
-            return False
-        return self.tokens[self.current+2].type == token_type
-
     def advance(self) -> Token:
         if not self.is_at_end():
             self.current += 1
