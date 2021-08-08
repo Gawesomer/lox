@@ -4,7 +4,7 @@ from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical,
 from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
 from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
-from token import Token
+from lox_token import Token
 from token_type import TokenType
 
 

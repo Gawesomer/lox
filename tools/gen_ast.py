@@ -11,7 +11,7 @@ class GenerateAST:
         output_dir = sys.argv[1]
         cls.define_ast(output_dir, "Expr",
             [
-                "from token import Token",
+                "from lox_token import Token",
             ],
             [
                 "Assign   ; name: Token, value: Expr",
@@ -29,7 +29,7 @@ class GenerateAST:
         cls.define_ast(output_dir, "Stmt",
             [
                 "from expr import Expr",
-                "from token import Token",
+                "from lox_token import Token",
             ],
             [
                 "Block      ; statements: list[Stmt]",

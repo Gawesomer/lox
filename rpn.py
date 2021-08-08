@@ -1,5 +1,5 @@
 from expr import Binary, Expr, Grouping, Literal, Unary, Ternary
-from token import Token
+from lox_token import Token
 from token_type import TokenType
 
 

@@ -6,7 +6,7 @@ from parser import Parser
 from exception import RuntimeException
 from resolver import Resolver
 from scanner import Scanner
-from token import Token
+from lox_token import Token
 from token_type import TokenType
 
 

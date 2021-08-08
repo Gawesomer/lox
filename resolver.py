@@ -4,7 +4,7 @@ from enum import Enum, auto
 from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
 from interpreter import Interpreter
 from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
-from token import Token
+from lox_token import Token
 
 
 class FunctionType(Enum):
