@@ -38,7 +38,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(expr.expression)
 
     def visit_lambda_expr(self, expr: Lambda) -> object:
-        self.resolve_function(expr)
+        self.resolve_function(expr, FunctionType.FUNCTION)
 
     def visit_literal_expr(self, expr: Literal) -> object:
         return None
