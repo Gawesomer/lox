@@ -146,7 +146,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def lookup_variable(self, name: Token, expr: Expr) -> object:
         distance = self.locals.get(expr)
         if distance is not None:
-            return self.environment.get_at(distance, name.lexeme)
+            return self.environment.get_at(distance, name)
         return self.globals.get(name)
 
     def evaluate(self, expr: Expr) -> object:

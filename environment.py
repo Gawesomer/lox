@@ -31,18 +31,23 @@ class Environment:
         self.ancestor(distance).values[name.lexeme] = value
 
     def get(self, name: Token) -> object:
+        self.check_initialized(name)
         if name.lexeme in self.values:
             return self.values[name.lexeme]
-        elif name.lexeme in self.defined:
-            raise RuntimeException(name, "Accessing uninitialized variable '{}'.".format(name.lexeme))
 
         if self.enclosing is not None:
             return self.enclosing.get(name)
 
         raise RuntimeException(name, "Undefined variable '{}'.".format(name.lexeme))
 
-    def get_at(self, distance: int, name: str) -> object:
-        return self.ancestor(distance).values[name]
+    def get_at(self, distance: int, name: Token) -> object:
+        ancestor = self.ancestor(distance)
+        ancestor.check_initialized(name)
+        return ancestor.values[name.lexeme]
+
+    def check_initialized(self, name: Token):
+        if name.lexeme in self.defined and name.lexeme not in self.values:
+            raise RuntimeException(name, "Accessing uninitialized variable '{}'.".format(name.lexeme))
 
     def ancestor(self, distance: int) -> "Environment":
         environment = self
