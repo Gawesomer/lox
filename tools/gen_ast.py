@@ -21,8 +21,8 @@ class GenerateAST:
                 "Lambda   ; params: list[Token], body: list['Stmt']",
                 "Literal  ; value: object",
                 "Logical  ; left: Expr, operator: Token, right: Expr",
-                "Unary    ; operator: Token, right: Expr",
                 "Ternary  ; conditional: Expr, truthy: Expr, falsy: Expr",
+                "Unary    ; operator: Token, right: Expr",
                 "Variable ; name: Token",
             ]
         )

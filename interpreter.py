@@ -16,6 +16,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.is_repl = is_repl
         self.globals = Environment()
         self.environment = self.globals
+        self.locals = dict()
 
         self.globals.initialize("clock", Clock())
 
@@ -28,7 +29,13 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_assign_expr(self, expr: Assign) -> object:
         value = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+
+        distance = self.locals.get(expr)
+        if distance is not None:
+            self.environment.assign_at(distance, expr.name, value)
+        else:
+            self.globals.assign(expr.name, value)
+
         return value
 
     def visit_binary_expr(self, expr: Binary) -> object:
@@ -134,7 +141,13 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         return None
 
     def visit_variable_expr(self, expr: Variable) -> object:
-        return self.environment.get(expr.name)
+        return self.lookup_variable(expr.name, expr)
+
+    def lookup_variable(self, name: Token, expr: Expr) -> object:
+        distance = self.locals.get(expr)
+        if distance is not None:
+            return self.environment.get_at(distance, name.lexeme)
+        return self.globals.get(name)
 
     def evaluate(self, expr: Expr) -> object:
         return expr.accept(self)
@@ -197,6 +210,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
                 self.execute(statement)
         finally:
             self.environment = previous
+
+    def resolve(self, expr: Expr, depth: int):
+        self.locals[expr] = depth
 
     def is_truthy(self, obj: object) -> bool:
         if obj is None:
