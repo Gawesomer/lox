@@ -15,11 +15,11 @@ class FunctionType(Enum):
 class Resolver(Expr.Visitor, Stmt.Visitor):
 
     def __init__(self, interpreter: Interpreter):
-            super().__init__()
-            self.interpreter = interpreter
-            self.scopes = []
-            self.current_function = FunctionType.NONE
-            self.current_loop = False
+        super().__init__()
+        self.interpreter = interpreter
+        self.scopes = []
+        self.current_function = FunctionType.NONE
+        self.current_loop = False
 
     def visit_assign_expr(self, expr: Assign) -> object:
         self.resolve(expr.value)
@@ -57,7 +57,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(expr.right)
 
     def visit_variable_expr(self, expr: Variable) -> object:
-        if len(self.scopes) != 0 and self.scopes[-1].get(expr.name.lexeme) == False:
+        if len(self.scopes) != 0 and self.scopes[-1].get(expr.name.lexeme)['is_defined'] == False:
             self.interpreter.reporter.parse_error(expr.name, "Can't read local variable in its own initializer.")
 
         self.resolve_local(expr, expr.name)
@@ -130,13 +130,13 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         scope = self.scopes[-1]
         if name.lexeme in scope:
             self.interpreter.reporter.parse_error(name, "Already a variable with this name in this scope.")
-        scope[name.lexeme] = False
+        scope[name.lexeme] = {'is_defined': False, 'token': name}
 
     def define(self, name: Token):
         if len(self.scopes) == 0:
             return
 
-        self.scopes[-1][name.lexeme] = True
+        self.scopes[-1][name.lexeme]['is_defined'] = True
 
     def resolve_statements(self, statements: list[Stmt]):
         for statement in statements:
@@ -155,4 +155,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.scopes.append(dict())
 
     def end_scope(self):
-        self.scopes.pop()
+        scope = self.scopes.pop()
+        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys()}
+        for var in set(scope.keys()).difference(used_locals):
+            self.interpreter.reporter.parse_error(scope[var]['token'], "Unused local variable {}.".format(var))
