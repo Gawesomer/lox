@@ -19,6 +19,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
             self.interpreter = interpreter
             self.scopes = []
             self.current_function = FunctionType.NONE
+            self.current_loop = False
 
     def visit_assign_expr(self, expr: Assign) -> object:
         self.resolve(expr.value)
@@ -67,6 +68,8 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.end_scope()
 
     def visit_break_stmt(self, stmt: Break):
+        if not self.current_loop:
+            self.interpreter.reporter.parse_error(stmt.keyword, "Break statement outside of enclosing loop.")
         return None
 
     def visit_expression_stmt(self, stmt: Expression):
@@ -114,7 +117,11 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
     def visit_while_stmt(self, stmt: While):
         self.resolve(stmt.condition)
+
+        self.enclosing_loop = self.current_loop
+        self.current_loop = True
         self.resolve(stmt.body)
+        self.current_loop = self.enclosing_loop
 
     def declare(self, name: Token):
         if len(self.scopes) == 0:

@@ -68,7 +68,6 @@ class Parser:
         self.reporter = reporter
         self.tokens = tokens
         self.current = 0
-        self.is_in_loop = 0
 
     def parse(self) -> list[Stmt]:
         statements = []
@@ -158,9 +157,7 @@ class Parser:
             increment = self.expression()
         self.consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
 
-        self.is_in_loop += 1
         body = self.statement();
-        self.is_in_loop -= 1
 
         if increment is not None:
             body = Block([body, Expression(increment)])
@@ -204,15 +201,11 @@ class Parser:
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
         condition = self.expression()
         self.consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.")
-        self.is_in_loop += 1
         body = self.statement()
-        self.is_in_loop -= 1
 
         return While(condition, body)
 
     def break_statement(self) -> Stmt:
-        if not self.is_in_loop:
-            raise self.error(self.previous(), "Break statement outside of enclosing loop.")
         break_stmt = Break(self.previous())
         self.consume(TokenType.SEMICOLON, "Expect ';' after break.")
         return break_stmt
