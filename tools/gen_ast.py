@@ -33,6 +33,7 @@ class GenerateAST:
             ],
             [
                 "Block      ; statements: list[Stmt]",
+                "Class      ; name: Token, methods: list['Function']",
                 "Break      ; keyword: Token",
                 "Expression ; expression: Expr",
                 "Function   ; name: Token, params: list[Token], body: list[Stmt]",

@@ -8,6 +8,9 @@ class Stmt:
         def visit_block_stmt(self, stmt: 'Block'):
             raise NotImplementedError
 
+        def visit_class_stmt(self, stmt: 'Class'):
+            raise NotImplementedError
+
         def visit_break_stmt(self, stmt: 'Break'):
             raise NotImplementedError
 
@@ -43,6 +46,15 @@ class Block(Stmt):
 
     def accept(self, visitor):
         return visitor.visit_block_stmt(self)
+
+
+class Class(Stmt):
+    def __init__(self, name: Token, methods: list['Function']):
+        self.name = name
+        self.methods = methods
+
+    def accept(self, visitor):
+        return visitor.visit_class_stmt(self)
 
 
 class Break(Stmt):

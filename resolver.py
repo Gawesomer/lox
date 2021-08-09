@@ -3,7 +3,7 @@ from enum import Enum, auto
 
 from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
 from interpreter import Interpreter
-from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 
 
@@ -57,7 +57,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(expr.right)
 
     def visit_variable_expr(self, expr: Variable) -> object:
-        if len(self.scopes) != 0 and self.scopes[-1].get(expr.name.lexeme)['is_defined'] == False:
+        if len(self.scopes) != 0 and expr.name.lexeme in self.scopes[-1] and self.scopes[-1][expr.name.lexeme]['is_defined'] == False:
             self.interpreter.reporter.parse_error(expr.name, "Can't read local variable in its own initializer.")
 
         self.resolve_local(expr, expr.name)
@@ -71,6 +71,10 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         if not self.current_loop:
             self.interpreter.reporter.parse_error(stmt.keyword, "Break statement outside of enclosing loop.")
         return None
+
+    def visit_class_stmt(self, stmt: Class):
+        self.declare(stmt.name)
+        self.define(stmt.name)
 
     def visit_expression_stmt(self, stmt: Expression):
         self.resolve(stmt.expression)

@@ -1,9 +1,10 @@
 from lox_callable import Callable, Clock
+from lox_class import LoxClass
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
 from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
-from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
 
@@ -157,6 +158,11 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_break_stmt(self, stmt: Break):
         raise BreakUnwindStackException("Unwinding stack to break out of loop.")
+
+    def visit_class_stmt(self, stmt: Class):
+        self.environment.initialize(stmt.name.lexeme, None)
+        klass = LoxClass(stmt.name.lexeme)
+        self.environment.assign(stmt.name, klass)
 
     def visit_expression_stmt(self, stmt: Expression):
         value = self.evaluate(stmt.expression)

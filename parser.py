@@ -1,5 +1,5 @@
 from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
-from stmt import Block, Break, Expression, Function, If, Print, Return, Stmt, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
 
@@ -8,10 +8,13 @@ class Parser:
     """
     Expression grammar:
         program        → declaration* EOF ;
-        declaration    → fun_decl
+        declaration    → class_decl
+                       | fun_decl
                        | var_decl
                        | statement ;
+        class_decl     → "class" IDENTIFIER "{" function* "}" ;
         fun_decl       → "fun" IDENTIFIER function ;
+        method         → IDENTIFIER "(" parameters? ")" block ;
         function       → "(" parameters? ")" block ;
         parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
         var_decl       → "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -78,6 +81,8 @@ class Parser:
 
     def declaration(self) -> Stmt:
         try:
+            if self.match(TokenType.CLASS):
+                return self.class_declaration()
             if self.check(TokenType.FUN) and not self.check_next(TokenType.LEFT_PAREN):
                 self.advance()  # Consume "fun" token.
                 return self.function_declaration("function")
@@ -87,6 +92,18 @@ class Parser:
         except self.ParseException:
             self.synchronize()
             return None
+
+    def class_declaration(self) -> Stmt:
+        name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        methods = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            methods.append(self.function_declaration("method"))
+
+        self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+        return Class(name, methods)
 
     def function_declaration(self, kind: str) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
