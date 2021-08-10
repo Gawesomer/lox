@@ -1,7 +1,8 @@
+from instance import Instance
 from lox_callable import Callable, Clock
 from lox_class import LoxClass
 from environment import Environment
-from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, Unary, Variable
 from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
@@ -100,6 +101,13 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             )
         return function.call(self, arguments)
 
+    def visit_get_expr(self, expr: Get) -> object:
+        objekt = self.evaluate(expr.objekt)
+        if isinstance(objekt, Instance):
+            return objekt.get(expr.name)
+
+        raise RuntimeException(expr.name, "Only instances have properties.")
+
     def visit_grouping_expr(self, expr: Grouping) -> object:
         return self.evaluate(expr.expression)
 
@@ -122,6 +130,15 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
                 return left
 
         return self.evaluate(expr.right)
+
+    def visit_set_expr(self, expr: Set) -> object:
+        objekt = self.evaluate(expr.objekt)
+
+        if not isinstance(objekt, Instance):
+            raise RuntimeException(expr.name, "Only instances have fields.")
+
+        value = self.evaluate(expr.value)
+        objekt.set(expr.name, value)
 
     def visit_ternary_expr(self, expr: Ternary) -> object:
         conditional = self.evaluate(expr.conditional)

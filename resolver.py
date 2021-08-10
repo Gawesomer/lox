@@ -1,7 +1,7 @@
 import typing
 from enum import Enum, auto
 
-from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, Unary, Variable
 from interpreter import Interpreter
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -35,6 +35,9 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         for argument in expr.arguments:
             self.resolve(argument)
 
+    def visit_get_expr(self, expr: Get) -> object:
+        self.resolve(expr.objekt)
+
     def visit_grouping_expr(self, expr: Grouping) -> object:
         self.resolve(expr.expression)
 
@@ -47,6 +50,10 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
     def visit_logical_expr(self, expr: Logical) -> object:
         self.resolve(left)
         self.resolve(right)
+
+    def visit_set_expr(self, expr: Set) -> object:
+        self.resolve(expr.value)
+        self.resolve(expr.objekt)
 
     def visit_ternary_expr(self, expr: Ternary) -> object:
         self.resolve(expr.conditional)

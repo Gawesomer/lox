@@ -1,4 +1,4 @@
-from expr import Assign, Binary, Call, Expr, Grouping, Lambda, Literal, Logical, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, Unary, Variable
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -40,7 +40,7 @@ class Parser:
         expression     → inv_comma ;
         inv_comma      → "," comma ;
         comma          → assignment ( "," assignment )* ;
-        assignment     → IDENTIFIER "=" assignment
+        assignment     → ( call "." )? IDENTIFIER "=" assignment
                        | inv_ternary
                        | lambda ;
         lambda         → "fun" function ;
@@ -57,7 +57,7 @@ class Parser:
         inv_factor     → ( "/" | "*" ) factory ;
         factor         → unary ( ( "/" | "*" ) unary )* ;
         unary          → ( "!" | "-" ) unary | call ;
-        call           → primary ( "(" arguments? ")" )* ;
+        call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
         arguments      → assignment ( "," assignment )* ;
         primary        → NUMBER | STRING | "true" | "false" | "nil"
                        | "(" expression ")"
@@ -275,6 +275,8 @@ class Parser:
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)
+            elif isinstance(expr, Get):
+                return Set(expr.objekt, expr.name, value)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -402,6 +404,9 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TokenType.DOT):
+                name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+                expr = Get(expr, name)
             else:
                 break
 

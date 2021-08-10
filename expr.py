@@ -13,6 +13,9 @@ class Expr:
         def visit_call_expr(self, expr: 'Call'):
             raise NotImplementedError
 
+        def visit_get_expr(self, expr: 'Get'):
+            raise NotImplementedError
+
         def visit_grouping_expr(self, expr: 'Grouping'):
             raise NotImplementedError
 
@@ -23,6 +26,9 @@ class Expr:
             raise NotImplementedError
 
         def visit_logical_expr(self, expr: 'Logical'):
+            raise NotImplementedError
+
+        def visit_set_expr(self, expr: 'Set'):
             raise NotImplementedError
 
         def visit_ternary_expr(self, expr: 'Ternary'):
@@ -68,6 +74,15 @@ class Call(Expr):
         return visitor.visit_call_expr(self)
 
 
+class Get(Expr):
+    def __init__(self, objekt: Expr, name: Token):
+        self.objekt = objekt
+        self.name = name
+
+    def accept(self, visitor):
+        return visitor.visit_get_expr(self)
+
+
 class Grouping(Expr):
     def __init__(self, expression: Expr):
         self.expression = expression
@@ -101,6 +116,16 @@ class Logical(Expr):
 
     def accept(self, visitor):
         return visitor.visit_logical_expr(self)
+
+
+class Set(Expr):
+    def __init__(self, objekt: Expr, name: Token, value: Expr):
+        self.objekt = objekt
+        self.name = name
+        self.value = value
+
+    def accept(self, visitor):
+        return visitor.visit_set_expr(self)
 
 
 class Ternary(Expr):
