@@ -2,7 +2,7 @@ from instance import Instance
 from lox_callable import Callable, Clock
 from lox_class import LoxClass
 from environment import Environment
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
@@ -146,6 +146,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             return self.evaluate(expr.truthy)
         return self.evaluate(expr.falsy)
 
+    def visit_this_expr(self, expr: This) -> object:
+        return self.lookup_variable(expr.keyword, expr)
+
     def visit_unary_expr(self, expr: Unary) -> object:
         right = self.evaluate(expr.right)
 
@@ -186,7 +189,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         klass = LoxClass(stmt.name.lexeme, methods)
         self.environment.assign(stmt.name, klass)
-
 
     def visit_expression_stmt(self, stmt: Expression):
         value = self.evaluate(stmt.expression)

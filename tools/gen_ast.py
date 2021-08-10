@@ -24,6 +24,7 @@ class GenerateAST:
                 "Logical  ; left: Expr, operator: Token, right: Expr",
                 "Set      ; objekt: Expr, name: Token, value: Expr",
                 "Ternary  ; conditional: Expr, truthy: Expr, falsy: Expr",
+                "This     ; keyword: Token",
                 "Unary    ; operator: Token, right: Expr",
                 "Variable ; name: Token",
             ]

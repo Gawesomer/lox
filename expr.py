@@ -34,6 +34,9 @@ class Expr:
         def visit_ternary_expr(self, expr: 'Ternary'):
             raise NotImplementedError
 
+        def visit_this_expr(self, expr: 'This'):
+            raise NotImplementedError
+
         def visit_unary_expr(self, expr: 'Unary'):
             raise NotImplementedError
 
@@ -136,6 +139,14 @@ class Ternary(Expr):
 
     def accept(self, visitor):
         return visitor.visit_ternary_expr(self)
+
+
+class This(Expr):
+    def __init__(self, keyword: Token):
+        self.keyword = keyword
+
+    def accept(self, visitor):
+        return visitor.visit_this_expr(self)
 
 
 class Unary(Expr):

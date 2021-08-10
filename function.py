@@ -1,5 +1,6 @@
 from environment import Environment
 from exception import ReturnException
+from instance import Instance
 from lox_callable import Callable
 from stmt import Function
 
@@ -22,6 +23,11 @@ class LoxFunction(Callable):
             interpreter.execute_block(self.declaration.body, environment)
         except ReturnException as return_value:
             return return_value.value
+
+    def bind(self, instance: Instance) -> "LoxFunction":
+        environment = Environment(self.closure)
+        environment.initialize("this", instance)
+        return LoxFunction(self.declaration, environment)
 
     def __str__(self) -> str:
         if self.declaration.name is not None:

@@ -1,4 +1,4 @@
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -435,6 +435,9 @@ class Parser:
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.THIS):
+            return This(self.previous())
 
         if self.match(TokenType.IDENTIFIER):
             return Variable(self.previous())

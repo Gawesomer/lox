@@ -1,7 +1,7 @@
 import typing
 from enum import Enum, auto
 
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from interpreter import Interpreter
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -61,6 +61,9 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(expr.truthy)
         self.resolve(expr.falsy)
 
+    def visit_this_expr(self, expr: This) -> object:
+        self.resolve_local(expr, expr.keyword)
+
     def visit_unary_expr(self, expr: Unary) -> object:
         self.resolve(expr.right)
 
@@ -84,9 +87,14 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
+        self.begin_scope()
+        self.scopes[-1]["this"] = {"is_defined": True, "token": stmt.name}
+
         for method in stmt.methods:
             declaration = FunctionType.METHOD
             self.resolve_function(method, declaration)
+
+        self.end_scope()
 
     def visit_expression_stmt(self, stmt: Expression):
         self.resolve(stmt.expression)
@@ -146,13 +154,13 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         scope = self.scopes[-1]
         if name.lexeme in scope:
             self.interpreter.reporter.parse_error(name, "Already a variable with this name in this scope.")
-        scope[name.lexeme] = {'is_defined': False, 'token': name}
+        scope[name.lexeme] = {"is_defined": False, "token": name}
 
     def define(self, name: Token):
         if len(self.scopes) == 0:
             return
 
-        self.scopes[-1][name.lexeme]['is_defined'] = True
+        self.scopes[-1][name.lexeme]["is_defined"] = True
 
     def resolve_statements(self, statements: list[Stmt]):
         for statement in statements:
@@ -172,6 +180,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
     def end_scope(self):
         scope = self.scopes.pop()
-        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys()}
+        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys() if not isinstance(expr, This)}
         for var in set(scope.keys()).difference(used_locals):
-            self.interpreter.reporter.parse_error(scope[var]['token'], "Unused local variable {}.".format(var))
+            if var != "this":
+                self.interpreter.reporter.parse_error(scope[var]["token"], "Unused local variable {}.".format(var))
