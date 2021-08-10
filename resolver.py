@@ -10,6 +10,7 @@ from lox_token import Token
 class FunctionType(Enum):
     NONE = auto()
     FUNCTION = auto()
+    METHOD = auto()
 
 
 class Resolver(Expr.Visitor, Stmt.Visitor):
@@ -82,6 +83,10 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
     def visit_class_stmt(self, stmt: Class):
         self.declare(stmt.name)
         self.define(stmt.name)
+
+        for method in stmt.methods:
+            declaration = FunctionType.METHOD
+            self.resolve_function(method, declaration)
 
     def visit_expression_stmt(self, stmt: Expression):
         self.resolve(stmt.expression)

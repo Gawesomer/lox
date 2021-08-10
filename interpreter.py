@@ -178,8 +178,15 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_class_stmt(self, stmt: Class):
         self.environment.initialize(stmt.name.lexeme, None)
-        klass = LoxClass(stmt.name.lexeme)
+
+        methods = dict()
+        for method in stmt.methods:
+            function = LoxFunction(method, self.environment)
+            methods[method.name.lexeme] = function
+
+        klass = LoxClass(stmt.name.lexeme, methods)
         self.environment.assign(stmt.name, klass)
+
 
     def visit_expression_stmt(self, stmt: Expression):
         value = self.evaluate(stmt.expression)
