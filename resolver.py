@@ -10,6 +10,7 @@ from lox_token import Token
 class FunctionType(Enum):
     NONE = auto()
     FUNCTION = auto()
+    INITIALIZER = auto()
     METHOD = auto()
 
 
@@ -105,6 +106,8 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
         for method in stmt.methods:
             declaration = FunctionType.METHOD
+            if method.name.lexeme == "init":
+                declaration = FunctionType.INITIALIZER
             self.resolve_function(method, declaration)
 
         self.end_scope()
@@ -146,6 +149,8 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
             self.interpreter.reporter.parse_error(stmt.keyword, "Can't return from top-level code.")
 
         if stmt.value is not None:
+            if self.current_function == FunctionType.INITIALIZER:
+                self.interpreter.reporter.parse_error(stmt.keyword, "Can't return a value from an initializer.")
             self.resolve(stmt.value)
 
     def visit_var_stmt(self, stmt: Var):
