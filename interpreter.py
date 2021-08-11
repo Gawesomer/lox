@@ -184,7 +184,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         methods = dict()
         for method in stmt.methods:
-            function = LoxFunction(method, self.environment)
+            function = LoxFunction(method, self.environment, method.name.lexeme == "init")
             methods[method.name.lexeme] = function
 
         klass = LoxClass(stmt.name.lexeme, methods)
@@ -196,7 +196,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             print(self.stringify(value))
 
     def visit_function_stmt(self, stmt: Function):
-        function = LoxFunction(stmt, self.environment)
+        function = LoxFunction(stmt, self.environment, False)
         if stmt.name is not None:
             self.environment.initialize(stmt.name.lexeme, function)
 

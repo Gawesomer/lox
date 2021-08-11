@@ -45,6 +45,10 @@ class Environment:
         ancestor.check_initialized(name)
         return ancestor.values[name.lexeme]
 
+    def get_at_no_check(self, distance: int, name: str) -> object:
+        ancestor = self.ancestor(distance)
+        return ancestor.values[name]
+
     def check_initialized(self, name: Token):
         if name.lexeme in self.defined and name.lexeme not in self.values:
             raise RuntimeException(name, "Accessing uninitialized variable '{}'.".format(name.lexeme))
