@@ -34,7 +34,7 @@ class LoxClass(Callable):
 
     def find_class_method(self, name: str) -> LoxFunction:
         if name in self.class_methods:
-            return self.class_methods[name]
+            return self.class_methods[name].bind(self)
         return None
 
     def __str__(self) -> str:

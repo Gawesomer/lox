@@ -30,7 +30,7 @@ class LoxFunction(Callable):
         if self.is_initializer:
             return self.closure.get_at_no_check(0, "this")
 
-    def bind(self, instance: Instance) -> "LoxFunction":
+    def bind(self, instance: [Instance, "LoxClass"]) -> "LoxFunction":
         environment = Environment(self.closure)
         environment.initialize("this", instance)
         return LoxFunction(self.declaration, environment, self.is_initializer)
