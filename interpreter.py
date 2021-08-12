@@ -105,6 +105,8 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         objekt = self.evaluate(expr.objekt)
         if isinstance(objekt, Instance):
             return objekt.get(expr.name)
+        elif isinstance(objekt, LoxClass):
+            return objekt.find_class_method(expr.name.lexeme)
 
         raise RuntimeException(expr.name, "Only instances have properties.")
 
@@ -182,12 +184,16 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_class_stmt(self, stmt: Class):
         self.environment.initialize(stmt.name.lexeme, None)
 
-        methods = dict()
-        for method in stmt.methods:
+        class_methods = dict()
+        instance_methods = dict()
+        for method in stmt.class_methods:
             function = LoxFunction(method, self.environment, method.name.lexeme == "init")
-            methods[method.name.lexeme] = function
+            class_methods[method.name.lexeme] = function
+        for method in stmt.instance_methods:
+            function = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            instance_methods[method.name.lexeme] = function
 
-        klass = LoxClass(stmt.name.lexeme, methods)
+        klass = LoxClass(stmt.name.lexeme, class_methods, instance_methods)
         self.environment.assign(stmt.name, klass)
 
     def visit_expression_stmt(self, stmt: Expression):

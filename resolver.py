@@ -104,7 +104,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.begin_scope()
         self.scopes[-1]["this"] = {"is_defined": True, "token": stmt.name}
 
-        for method in stmt.methods:
+        for method in stmt.class_methods+stmt.instance_methods:
             declaration = FunctionType.METHOD
             if method.name.lexeme == "init":
                 declaration = FunctionType.INITIALIZER

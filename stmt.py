@@ -49,9 +49,10 @@ class Block(Stmt):
 
 
 class Class(Stmt):
-    def __init__(self, name: Token, methods: list['Function']):
+    def __init__(self, name: Token, class_methods: list['Function'], instance_methods: list['Function']):
         self.name = name
-        self.methods = methods
+        self.class_methods = class_methods
+        self.instance_methods = instance_methods
 
     def accept(self, visitor):
         return visitor.visit_class_stmt(self)

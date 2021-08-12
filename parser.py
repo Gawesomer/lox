@@ -12,7 +12,7 @@ class Parser:
                        | fun_decl
                        | var_decl
                        | statement ;
-        class_decl     → "class" IDENTIFIER "{" function* "}" ;
+        class_decl     → "class" IDENTIFIER "{" ( "class"? function )* "}" ;
         fun_decl       → "fun" IDENTIFIER function ;
         method         → IDENTIFIER "(" parameters? ")" block ;
         function       → "(" parameters? ")" block ;
@@ -97,13 +97,17 @@ class Parser:
         name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
-        methods = []
+        class_methods = []
+        instance_methods = []
         while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
-            methods.append(self.function_declaration("method"))
+            if self.match(TokenType.CLASS):
+                class_methods.append(self.function_declaration("method"))
+            else:
+                instance_methods.append(self.function_declaration("method"))
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
-        return Class(name, methods)
+        return Class(name, class_methods, instance_methods)
 
     def function_declaration(self, kind: str) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))
