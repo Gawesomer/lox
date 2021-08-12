@@ -104,7 +104,10 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_get_expr(self, expr: Get) -> object:
         objekt = self.evaluate(expr.objekt)
         if isinstance(objekt, Instance):
-            return objekt.get(expr.name)
+            res = objekt.get(expr.name)
+            if expr.name.lexeme in objekt.klass.getters:
+                return res.call(self, ())
+            return res
         elif isinstance(objekt, LoxClass):
             return objekt.find_class_method(expr.name.lexeme)
 
@@ -185,15 +188,19 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.environment.initialize(stmt.name.lexeme, None)
 
         class_methods = dict()
-        instance_methods = dict()
         for method in stmt.class_methods:
             function = LoxFunction(method, self.environment, method.name.lexeme == "init")
             class_methods[method.name.lexeme] = function
+        instance_methods = dict()
         for method in stmt.instance_methods:
             function = LoxFunction(method, self.environment, method.name.lexeme == "init")
             instance_methods[method.name.lexeme] = function
+        getters = dict()
+        for method in stmt.getters:
+            function = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            getters[method.name.lexeme] = function
 
-        klass = LoxClass(stmt.name.lexeme, class_methods, instance_methods)
+        klass = LoxClass(stmt.name.lexeme, class_methods, instance_methods, getters)
         self.environment.assign(stmt.name, klass)
 
     def visit_expression_stmt(self, stmt: Expression):

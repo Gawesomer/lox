@@ -5,10 +5,11 @@ from lox_callable import Callable
 
 class LoxClass(Callable):
 
-    def __init__(self, name: str, class_methods: dict[str, LoxFunction], instance_methods: dict[str, LoxFunction]):
+    def __init__(self, name: str, class_methods: dict[str, LoxFunction], instance_methods: dict[str, LoxFunction], getters: dict[str, LoxFunction]):
         self.name = name
         self.class_methods = class_methods
         self.instance_methods = instance_methods
+        self.getters = getters
 
     def arity(self) -> int:
         initializer = self.find_method("init")
@@ -25,6 +26,8 @@ class LoxClass(Callable):
         return instance
 
     def find_method(self, name: str) -> LoxFunction:
+        if name in self.getters:
+            return self.getters[name]
         if name in self.instance_methods:
             return self.instance_methods[name]
         return self.find_class_method(name)
