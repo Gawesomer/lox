@@ -31,6 +31,9 @@ class Expr:
         def visit_set_expr(self, expr: 'Set'):
             raise NotImplementedError
 
+        def visit_super_expr(self, expr: 'Super'):
+            raise NotImplementedError
+
         def visit_ternary_expr(self, expr: 'Ternary'):
             raise NotImplementedError
 
@@ -129,6 +132,15 @@ class Set(Expr):
 
     def accept(self, visitor):
         return visitor.visit_set_expr(self)
+
+
+class Super(Expr):
+    def __init__(self, keyword: Token, method: Token):
+        self.keyword = keyword
+        self.method = method
+
+    def accept(self, visitor):
+        return visitor.visit_super_expr(self)
 
 
 class Ternary(Expr):

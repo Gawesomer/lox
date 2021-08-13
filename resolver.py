@@ -1,7 +1,7 @@
 import typing
 from enum import Enum, auto
 
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Super, Ternary, This, Unary, Variable
 from interpreter import Interpreter
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -63,6 +63,9 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(expr.value)
         self.resolve(expr.objekt)
 
+    def visit_super_expr(self, expr: Super) -> object:
+        self.resolve_local(expr, expr.keyword)
+
     def visit_ternary_expr(self, expr: Ternary) -> object:
         self.resolve(expr.conditional)
         self.resolve(expr.truthy)
@@ -107,6 +110,10 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         if stmt.superclass is not None:
             self.resolve(stmt.superclass)
 
+        if stmt.superclass is not None:
+            self.begin_scope()
+            self.scopes[-1]["super"] = {"is_defined": True, "token": stmt.name}
+
         self.begin_scope()
         self.scopes[-1]["this"] = {"is_defined": True, "token": stmt.name}
 
@@ -117,6 +124,9 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
             self.resolve_function(method, declaration)
 
         self.end_scope()
+
+        if stmt.superclass is not None:
+            self.end_scope()
 
         self.current_class = enclosing_class
 
@@ -206,7 +216,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
     def end_scope(self):
         scope = self.scopes.pop()
-        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys() if not isinstance(expr, This)}
+        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys() if not (isinstance(expr, This) or isinstance(expr, Super))}
         for var in set(scope.keys()).difference(used_locals):
-            if var != "this":
+            if var != "this" and var != "super":
                 self.interpreter.reporter.parse_error(scope[var]["token"], "Unused local variable {}.".format(var))

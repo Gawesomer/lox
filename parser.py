@@ -1,4 +1,4 @@
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Super, Ternary, This, Unary, Variable
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -60,9 +60,9 @@ class Parser:
         unary          → ( "!" | "-" ) unary | call ;
         call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
         arguments      → assignment ( "," assignment )* ;
-        primary        → NUMBER | STRING | "true" | "false" | "nil"
-                       | "(" expression ")"
-                       | IDENTIFIER ;
+        primary        → "true" | "false" | "nil" | "this"
+                       | NUMBER | STRING | IDENTIFIER | "(" expression ")"
+                       | "super" "." IDENTIFIER ;
     """
 
     class ParseException(Exception):
@@ -452,6 +452,12 @@ class Parser:
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.SUPER):
+            keyword = self.previous()
+            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
+            method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+            return Super(keyword, method)
 
         if self.match(TokenType.THIS):
             return This(self.previous())
