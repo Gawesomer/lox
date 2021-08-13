@@ -109,7 +109,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
                 return res.call(self, ())
             return res
         elif isinstance(objekt, LoxClass):
-            return objekt.find_class_method(expr.name.lexeme)
+            return objekt.find_class_method(expr.name.lexeme, recurse=True)
 
         raise RuntimeException(expr.name, "Only instances have properties.")
 
@@ -185,6 +185,12 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         raise BreakUnwindStackException("Unwinding stack to break out of loop.")
 
     def visit_class_stmt(self, stmt: Class):
+        superclass = None
+        if stmt.superclass is not None:
+            superclass = self.evaluate(stmt.superclass)
+            if not isinstance(superclass, LoxClass):
+                raise RuntimeException(stmt.superclass.name, "Superclass must be a class.")
+
         self.environment.initialize(stmt.name.lexeme, None)
 
         class_methods = dict()
@@ -200,7 +206,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             function = LoxFunction(method, self.environment, method.name.lexeme == "init")
             getters[method.name.lexeme] = function
 
-        klass = LoxClass(stmt.name.lexeme, class_methods, instance_methods, getters)
+        klass = LoxClass(stmt.name.lexeme, superclass, class_methods, instance_methods, getters)
         self.environment.assign(stmt.name, klass)
 
     def visit_expression_stmt(self, stmt: Expression):

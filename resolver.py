@@ -101,6 +101,12 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
+        if stmt.superclass is not None and stmt.name.lexeme == stmt.superclass.name.lexeme:
+            self.interpreter.reporter.parse_error(stmt.superclass.name, "A class can't inherit from itself.")
+
+        if stmt.superclass is not None:
+            self.resolve(stmt.superclass)
+
         self.begin_scope()
         self.scopes[-1]["this"] = {"is_defined": True, "token": stmt.name}
 

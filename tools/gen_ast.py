@@ -31,12 +31,12 @@ class GenerateAST:
         )
         cls.define_ast(output_dir, "Stmt",
             [
-                "from expr import Expr",
+                "from expr import Expr, Variable",
                 "from lox_token import Token",
             ],
             [
                 "Block      ; statements: list[Stmt]",
-                "Class      ; name: Token, class_methods: list['Function'], instance_methods: list['Function'], getters: list['Function']",
+                "Class      ; name: Token, superclass: Variable, class_methods: list['Function'], instance_methods: list['Function'], getters: list['Function']",
                 "Break      ; keyword: Token",
                 "Expression ; expression: Expr",
                 "Function   ; name: Token, params: list[Token], body: list[Stmt]",
