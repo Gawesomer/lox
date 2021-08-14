@@ -78,4 +78,4 @@ def test_scan_token_invalid_character(source: str, expected_error: str):
     scanned_token = scanner.scan_token()
 
     assert scanned_token is None
-    mock_reporter.error.assert_called_with(1, expected_error)
+    mock_reporter.error.assert_called_with(Any(), expected_error)

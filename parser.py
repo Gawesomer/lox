@@ -4,6 +4,10 @@ from lox_token import Token
 from token_type import TokenType
 
 
+class ParseException(Exception):
+    pass
+
+
 class Parser:
     """
     Expression grammar:
@@ -65,9 +69,6 @@ class Parser:
                        | "super" "." IDENTIFIER ;
     """
 
-    class ParseException(Exception):
-        pass
-
     def __init__(self, reporter: "Lox", tokens: list[Token]):
         self.reporter = reporter
         self.tokens = tokens
@@ -90,7 +91,7 @@ class Parser:
             if self.match(TokenType.VAR):
                 return self.var_declaration()
             return self.statement()
-        except self.ParseException:
+        except ParseException:
             self.synchronize()
             return None
 
@@ -512,7 +513,7 @@ class Parser:
 
     def error(self, token: Token, message: str) -> Exception:
         self.reporter.parse_error(token, message)
-        return self.ParseException()
+        return ParseException()
 
     def synchronize(self):
         self.advance()
