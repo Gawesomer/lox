@@ -118,7 +118,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_lambda_expr(self, expr: Lambda) -> object:
         stmt = Function(None, expr.params, expr.body)
-        function = LoxFunction(stmt, self.environment)
+        function = LoxFunction(stmt, self.environment, False)
         return function
 
     def visit_literal_expr(self, expr: Literal) -> object:

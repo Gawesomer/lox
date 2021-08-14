@@ -33,7 +33,7 @@ class Scanner:
         self.current = 0
         self.line = 1
 
-    def scan_tokens(self):
+    def scan_tokens(self) -> list[Token]:
         while not self.is_at_end():
             # We are at the beginning of the next lexeme.
             self.start = self.current
