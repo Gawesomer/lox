@@ -103,7 +103,7 @@ class Scanner:
         self.current += 1
         return self.source[self.current-1]
 
-    def new_token(self, token_type: TokenType, literal=None) -> Token:
+    def new_token(self, token_type: TokenType, literal: object = None) -> Token:
         text = self.source[self.start:self.current]
         return Token(token_type, text, literal, self.line)
 
@@ -132,7 +132,7 @@ class Scanner:
 
         if self.is_at_end():
             self.reporter.error(self.line, "Unterminated string.")
-            return
+            return None
 
         # The closing ".
         self.advance()
@@ -178,7 +178,7 @@ class Scanner:
 
             if self.is_at_end():
                 self.reporter.error(self.line, "Unterminated block comment.")
-                return
+                return None
 
             # Consume the "*/"
             self.advance()

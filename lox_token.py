@@ -3,7 +3,7 @@ from token_type import TokenType
 
 class Token:
 
-    def __init__(self, token_type: TokenType, lexeme: str, literal, line: int):
+    def __init__(self, token_type: TokenType, lexeme: str, literal: object, line: int):
         self.type = token_type
         self.lexeme = lexeme
         self.literal = literal
