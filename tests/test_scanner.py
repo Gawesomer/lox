@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 import pytest
+from tests.conftest import Any
 
 from lox_token import Token
 from token_type import TokenType
