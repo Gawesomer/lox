@@ -243,6 +243,27 @@ def test_expression_parse_lambda():
     assert isinstance(actual_expr, Lambda)
 
 
+def test_expression_parse_call_lambda():
+    source = "fun(){}()"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Call)
+    assert isinstance(actual_expr.callee, Lambda)
+
+
+def test_expression_parse_lambda_call_get_chain():
+    source = "fun(obj){return obj;}().property"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Get)
+    assert isinstance(actual_expr.objekt, Call)
+    assert isinstance(actual_expr.objekt.callee, Lambda)
+
+
 def test_expression_parse_nested_assignments():
     source = "object.property = var1 = fun(a){print a;}"
 
@@ -408,7 +429,7 @@ def test_statement_parse_empty_for():
     assert isinstance(actual_stmt.body, Print)
 
 
-def test_statement_parse_for_expression_initializer():
+def test_statement_parse_for_with_expression_initializer():
     source = "for (a=1; a<len(s); a=a+1) print a;"
 
     parser = Parser(Mock(), scan_tokens(source))
@@ -422,6 +443,15 @@ def test_statement_parse_for_expression_initializer():
     assert 2 == len(actual_stmt.statements[1].body.statements)
     assert isinstance(actual_stmt.statements[1].body.statements[0], Print)
     assert isinstance(actual_stmt.statements[1].body.statements[1].expression, Assign)
+
+
+def test_statement_parse_for_with_var_declaration_initializer():
+    source = "for (var a=1;;) print a;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt.statements[0], Var)
 
 
 @pytest.mark.parametrize("source, expected_error", [
@@ -443,5 +473,38 @@ def test_statement_parse_reports_error(source: str, expected_error: str):
     parser = Parser(mock_reporter, scan_tokens(source))
     with pytest.raises(ParseException):
         parser.statement()
+
+    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
+
+
+def test_declaration_parse_variable_declaration_without_initializer():
+    source = "var a;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.declaration()
+
+    assert isinstance(actual_stmt, Var)
+    assert "a" == actual_stmt.name.lexeme
+    assert actual_stmt.initializer is None
+
+
+def test_declaration_parse_variable_declaration_with_initializer():
+    source = "var a = b = 3;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.declaration()
+
+    assert isinstance(actual_stmt, Var)
+    assert isinstance(actual_stmt.initializer, Assign)
+
+
+@pytest.mark.parametrize("source, expected_error", [
+    ("var = 3;", "Expect variable name."),
+    ("var a = 3", "Expect ';' after variable declaration."),
+])
+def test_declaration_parse_reports_error(source: str, expected_error: str):
+    mock_reporter = Mock()
+    parser = Parser(mock_reporter, scan_tokens(source))
+    parser.declaration()
 
     mock_reporter.parse_error.assert_called_with(Any(), expected_error)

@@ -270,6 +270,9 @@ class Parser:
     def assignment(self) -> Expr:
         if self.match(TokenType.FUN):
             parameters, body = self.function("function")
+            if self.match(TokenType.LEFT_PAREN):
+                expr = Lambda(parameters, body)
+                return self.call(self.finish_call(expr))
             return Lambda(parameters, body)
 
         expr = self.inv_ternary()
@@ -365,8 +368,9 @@ class Parser:
 
         return self.call()
 
-    def call(self) -> Expr:
-        expr = self.primary()
+    def call(self, expr: Expr = None) -> Expr:
+        if expr is None:
+            expr = self.primary()
 
         while True:
             if self.match(TokenType.LEFT_PAREN):
