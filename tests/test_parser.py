@@ -139,38 +139,15 @@ def test_expression_parse_nested_unary():
 
 
 def test_expression_parse_factor():
-    source = "-1/!false"
+    source = "1/!false"
 
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
 
     assert isinstance(actual_expr, Binary)
     assert TokenType.SLASH == actual_expr.operator.type
-    assert isinstance(actual_expr.left, Unary)
+    assert isinstance(actual_expr.left, Literal)
     assert isinstance(actual_expr.right, Unary)
-
-
-def test_expression_parse_multiple_factors():
-    source = "1*2/3"
-
-    parser = Parser(Mock(), scan_tokens(source))
-    actual_expr = parser.expression()
-
-    assert actual_expr.left.left.value == 1
-    assert actual_expr.left.right.value == 2
-    assert actual_expr.right.value == 3
-
-
-def test_expression_ignore_invalid_factor():
-    source = "*(1-0) 4"
-    expected_error = "Factor operator without left-hand operand."
-
-    mock_reporter = Mock()
-    parser = Parser(mock_reporter, scan_tokens(source))
-    actual_expr = parser.expression()
-
-    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
-    assert isinstance(actual_expr, Literal)
 
 
 def test_expression_parse_term():
@@ -185,28 +162,19 @@ def test_expression_parse_term():
     assert isinstance(actual_expr.right, Unary)
 
 
-def test_expression_ignore_invalid_term():
-    source = "+3*4 4"
-    expected_error = "Term operator without left-hand operand."
-
-    mock_reporter = Mock()
-    parser = Parser(mock_reporter, scan_tokens(source))
-    actual_expr = parser.expression()
-
-    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
-    assert isinstance(actual_expr, Literal)
-
-
-def test_expression_parse_multiple_terms():
-    source = "1+2-3"
-
+@pytest.mark.parametrize("source, expected_values", [
+    ("1*2/3", (1, 2, 3)),
+    ("1+2-3", (1, 2, 3)),
+    ("1<2>=3", (1, 2, 3)),
+    ("1==2!=3", (1, 2, 3)),
+])
+def test_expression_parse_multiple_binaries(source: str, expected_values: list[object]):
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
 
-    assert isinstance(actual_expr, Binary)
-    assert actual_expr.left.left.value == 1
-    assert actual_expr.left.right.value == 2
-    assert actual_expr.right.value == 3
+    assert actual_expr.left.left.value == expected_values[0]
+    assert actual_expr.left.right.value == expected_values[1]
+    assert actual_expr.right.value == expected_values[2]
 
 
 @pytest.mark.parametrize("source, expected_error", [
@@ -228,6 +196,10 @@ def test_expression_parse_raises_error(source: str, expected_error: str):
 
 @pytest.mark.parametrize("source, expected_error", [
     ("f({})".format(','.join([str(i) for i in range(256)])), "Can't have more than 255 arguments."),
+    ("*(1-0) expr", "Factor operator without left-hand operand."),
+    ("+3*4 expr", "Term operator without left-hand operand."),
+    ("<=3+4 expr", "Comparison operator without left-hand operand."),
+    ("!=3>4 expr", "Equality operator without left-hand operand."),
 ])
 def test_expression_parse_reports_error(source: str, expected_error: str):
     mock_reporter = Mock()
