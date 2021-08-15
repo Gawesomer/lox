@@ -118,16 +118,84 @@ def test_expression_parse_get_call_chain():
     assert isinstance(actual_expr.objekt.callee.callee.objekt.callee, Super)
 
 
+def test_expression_parse_single_unary():
+    source = "!object.method"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Unary)
+    assert TokenType.BANG == actual_expr.operator.type
+
+
+def test_expression_parse_nested_unary():
+    source = "!-1"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Unary)
+    assert isinstance(actual_expr.right, Unary)
+
+
+def test_expression_parse_factor():
+    source = "-1/!false"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Binary)
+    assert TokenType.SLASH == actual_expr.operator.type
+    assert isinstance(actual_expr.left, Unary)
+    assert isinstance(actual_expr.right, Unary)
+
+
+def test_expression_parse_multiple_factors():
+    source = "1*2/3"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert actual_expr.left.value == 1
+    assert actual_expr.right.left.value == 2
+    assert actual_expr.right.right.value == 3
+
+
+def test_expression_ignore_invalid_factor():
+    source = "*(1-0) 4"
+    expected_error = "Factor operator without left-hand operand."
+
+    mock_reporter = Mock()
+    parser = Parser(mock_reporter, scan_tokens(source))
+    actual_expr = parser.expression()
+
+    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
+    assert isinstance(actual_expr, Literal)
+
+
 @pytest.mark.parametrize("source, expected_error", [
+    ("", "Expect expression."),
     ("super", "Expect '.' after 'super'."),
     ("super.", "Expect superclass method name."),
     ("(1", "Expect ')' after expression."),
-    ("", "Expect expression."),
+    ("object.", "Expect property name after '.'."),
+    ("f(arg", "Expect ')' after arguments."),
 ])
-def test_expression_parse_error(source: str, expected_error: str):
+def test_expression_parse_raises_error(source: str, expected_error: str):
     mock_reporter = Mock()
     parser = Parser(mock_reporter, scan_tokens(source))
     with pytest.raises(ParseException):
         parser.expression()
+
+    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
+
+
+@pytest.mark.parametrize("source, expected_error", [
+    ("f({})".format(','.join([str(i) for i in range(256)])), "Can't have more than 255 arguments."),
+])
+def test_expression_parse_reports_error(source: str, expected_error: str):
+    mock_reporter = Mock()
+    parser = Parser(mock_reporter, scan_tokens(source))
+    parser.expression()
 
     mock_reporter.parse_error.assert_called_with(Any(), expected_error)
