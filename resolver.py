@@ -57,8 +57,8 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         return None
 
     def visit_logical_expr(self, expr: Logical) -> object:
-        self.resolve(left)
-        self.resolve(right)
+        self.resolve(expr.left)
+        self.resolve(expr.right)
 
     def visit_set_expr(self, expr: Set) -> object:
         self.resolve(expr.value)
