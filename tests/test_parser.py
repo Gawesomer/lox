@@ -59,14 +59,14 @@ def test_expression_parse_variable():
 
 
 def test_expression_parse_grouping():
-    source = "(1)"
+    source = "(1, 2)"
 
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
 
     assert isinstance(actual_expr, Grouping)
-    assert isinstance(actual_expr.expression, Literal)
-    assert actual_expr.expression.value == 1
+    assert isinstance(actual_expr.expression, Binary)
+    assert actual_expr.expression.operator.lexeme == ","
 
 
 def test_expression_parse_basic_call():
@@ -138,43 +138,28 @@ def test_expression_parse_nested_unary():
     assert isinstance(actual_expr.right, Unary)
 
 
-def test_expression_parse_factor():
-    source = "1/!false"
+def test_expression_parse_binary():
+    source = "true==3>4"
 
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
 
     assert isinstance(actual_expr, Binary)
-    assert TokenType.SLASH == actual_expr.operator.type
+    assert TokenType.EQUAL_EQUAL == actual_expr.operator.type
     assert isinstance(actual_expr.left, Literal)
-    assert isinstance(actual_expr.right, Unary)
+    assert isinstance(actual_expr.right, Binary)
+    assert TokenType.GREATER == actual_expr.right.operator.type
 
 
-def test_expression_parse_term():
-    source = "1*2--1"
+def test_expression_parse_multiple_binaries():
+    source = "1==2!=3"
 
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
 
-    assert isinstance(actual_expr, Binary)
-    assert TokenType.MINUS == actual_expr.operator.type
-    assert isinstance(actual_expr.left, Binary)
-    assert isinstance(actual_expr.right, Unary)
-
-
-@pytest.mark.parametrize("source, expected_values", [
-    ("1*2/3", (1, 2, 3)),
-    ("1+2-3", (1, 2, 3)),
-    ("1<2>=3", (1, 2, 3)),
-    ("1==2!=3", (1, 2, 3)),
-])
-def test_expression_parse_multiple_binaries(source: str, expected_values: list[object]):
-    parser = Parser(Mock(), scan_tokens(source))
-    actual_expr = parser.expression()
-
-    assert actual_expr.left.left.value == expected_values[0]
-    assert actual_expr.left.right.value == expected_values[1]
-    assert actual_expr.right.value == expected_values[2]
+    assert actual_expr.left.left.value == 1
+    assert actual_expr.left.right.value == 2
+    assert actual_expr.right.value == 3
 
 
 @pytest.mark.parametrize("source, expected_error", [
@@ -196,9 +181,6 @@ def test_expression_parse_raises_error(source: str, expected_error: str):
 
 @pytest.mark.parametrize("source, expected_error", [
     ("f({})".format(','.join([str(i) for i in range(256)])), "Can't have more than 255 arguments."),
-    ("*(1-0) expr", "Factor operator without left-hand operand."),
-    ("+3*4 expr", "Term operator without left-hand operand."),
-    ("<=3+4 expr", "Comparison operator without left-hand operand."),
     ("!=3>4 expr", "Equality operator without left-hand operand."),
 ])
 def test_expression_parse_reports_error(source: str, expected_error: str):

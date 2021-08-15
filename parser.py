@@ -1,3 +1,5 @@
+import typing
+
 from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Super, Ternary, This, Unary, Variable
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -331,82 +333,48 @@ class Parser:
         return expr
 
     def logic_and(self) -> Expr:
-        expr = self.inv_equality()
+        expr = self.equality()
 
         while self.match(TokenType.AND):
             operator = self.previous()
-            right = self.inv_equality()
+            right = self.equality()
             expr = Logical(expr, operator, right)
 
         return expr
 
-    def inv_equality(self) -> Expr:
-        if self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
-            self.error(self.peek(), "Equality operator without left-hand operand.")
-            invalid_expression = self.equality()
-
-        return self.equality()
 
     def equality(self) -> Expr:
-        expression = self.inv_comparison()
+        return self.parse_binary("Equality", (TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL), self.comparison)
 
-        while self.match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
-            operator = self.previous()
-            right = self.inv_comparison()
-            expression = Binary(expression, operator, right)
-
-        return expression
-
-    def inv_comparison(self) -> Expr:
-        if self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
-            self.error(self.peek(), "Comparison operator without left-hand operand.")
-            invalid_expression = self.comparison()
-
-        return self.comparison()
 
     def comparison(self) -> Expr:
-        expression = self.inv_term()
+        return self.parse_binary("Comparison", (TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL), self.term)
 
-        while self.match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL):
-            operator = self.previous()
-            right = self.inv_term()
-            expression = Binary(expression, operator, right)
-
-        return expression
-
-    def inv_term(self) -> Expr:
-        if self.match(TokenType.PLUS):
-            self.error(self.peek(), "Term operator without left-hand operand.")
-            invalid_expression = self.term()
-
-        return self.term()
 
     def term(self) -> Expr:
-        expression = self.inv_factor()
+        return self.parse_binary("Term", [TokenType.MINUS, TokenType.PLUS], self.factor)
 
-        while self.match(TokenType.MINUS, TokenType.PLUS):
-            operator = self.previous()
-            right = self.inv_factor()
-            expression = Binary(expression, operator, right)
-
-        return expression
-
-    def inv_factor(self) -> Expr:
-        if self.match(TokenType.SLASH, TokenType.STAR):
-            self.error(self.peek(), "Factor operator without left-hand operand.")
-            invalid_expression = self.factor()
-
-        return self.factor()
 
     def factor(self) -> Expr:
-        expression = self.unary()
+        return self.parse_binary("Factor", [TokenType.SLASH, TokenType.STAR], self.unary)
 
-        while self.match(TokenType.SLASH, TokenType.STAR):
-            operator = self.previous()
-            right = self.unary()
-            expression = Binary(expression, operator, right)
 
-        return expression
+    def parse_binary(self, name: str, match_operators: list[TokenType], subexpr: typing.Callable) -> Expr:
+        def parse_valid_binary():
+            expression = subexpr()
+
+            while self.match(*match_operators):
+                operator = self.previous()
+                right = subexpr()
+                expression = Binary(expression, operator, right)
+
+            return expression
+
+        if self.match(*match_operators):
+            self.error(self.peek(), "{} operator without left-hand operand.".format(name))
+            invalid_expression = parse_valid_binary()
+
+        return parse_valid_binary()
 
     def unary(self) -> Expr:
         if self.match(TokenType.BANG, TokenType.MINUS):
