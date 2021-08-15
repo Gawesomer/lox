@@ -29,7 +29,7 @@ def test_expression_parse_literal(source: str, expected_expr_value: object):
     assert expected_expr_value == actual_expr.value
 
 
-def test_expression_parse_valid_super():
+def test_expression_parse_super():
     source = "super.method"
 
     parser = Parser(Mock(), scan_tokens(source))
@@ -233,6 +233,20 @@ def test_expression_parse_set():
     assert isinstance(actual_expr.value, Ternary)
 
 
+def test_expression_parse_nested_assignments():
+    source = "object.property = var1 = 1?2:3"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Set)
+    assert isinstance(actual_expr.objekt, Variable)
+    assert "property" == actual_expr.name.lexeme
+    assert isinstance(actual_expr.value, Assign)
+    assert "var1" == actual_expr.value.name.lexeme
+    assert isinstance(actual_expr.value.value, Ternary)
+
+
 @pytest.mark.parametrize("source, expected_error", [
     ("", "Expect expression."),
     ("super", "Expect '.' after 'super'."),
@@ -257,6 +271,7 @@ def test_expression_parse_raises_error(source: str, expected_error: str):
     ("!=3>4 expr", "Equality operator without left-hand operand."),
     ("?true expr", "Ternary operator without left-hand operand."),
     (":true expr", "Ternary operator without left-hand operand."),
+    ("1=2", "Invalid assignment target."),
 ])
 def test_expression_parse_reports_error(source: str, expected_error: str):
     mock_reporter = Mock()

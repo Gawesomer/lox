@@ -262,24 +262,10 @@ class Parser:
         return Expression(expr)
 
     def expression(self) -> Expr:
-        return self.inv_comma()
-
-    def inv_comma(self) -> Expr:
-        if self.match(TokenType.COMMA):
-            self.error(self.peek(), "Comma operator without left-hand operand.")
-            invalid_expression = self.comma()
-
         return self.comma()
 
     def comma(self) -> Expr:
-        expression = self.assignment()
-
-        while self.match(TokenType.COMMA):
-            operator = self.previous()
-            right = self.assignment()
-            expression = Binary(expression, operator, right)
-
-        return expression
+        return self.parse_binary("Comma", (TokenType.COMMA,), self.assignment)
 
     def assignment(self) -> Expr:
         if self.match(TokenType.FUN):
@@ -342,22 +328,17 @@ class Parser:
 
         return expr
 
-
     def equality(self) -> Expr:
         return self.parse_binary("Equality", (TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL), self.comparison)
-
 
     def comparison(self) -> Expr:
         return self.parse_binary("Comparison", (TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL), self.term)
 
-
     def term(self) -> Expr:
         return self.parse_binary("Term", [TokenType.MINUS, TokenType.PLUS], self.factor)
 
-
     def factor(self) -> Expr:
         return self.parse_binary("Factor", [TokenType.SLASH, TokenType.STAR], self.unary)
-
 
     def parse_binary(self, name: str, match_operators: list[TokenType], subexpr: typing.Callable) -> Expr:
         def parse_valid_binary():
