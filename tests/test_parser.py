@@ -6,6 +6,7 @@ from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Log
 from lox_token import Token
 from parser import Parser, ParseException
 from scanner import Scanner
+from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from token_type import TokenType
 
 
@@ -233,8 +234,17 @@ def test_expression_parse_set():
     assert isinstance(actual_expr.value, Ternary)
 
 
+def test_expression_parse_lambda():
+    source = "fun(){}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Lambda)
+
+
 def test_expression_parse_nested_assignments():
-    source = "object.property = var1 = 1?2:3"
+    source = "object.property = var1 = fun(a){print a;}"
 
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
@@ -244,7 +254,7 @@ def test_expression_parse_nested_assignments():
     assert "property" == actual_expr.name.lexeme
     assert isinstance(actual_expr.value, Assign)
     assert "var1" == actual_expr.value.name.lexeme
-    assert isinstance(actual_expr.value.value, Ternary)
+    assert isinstance(actual_expr.value.value, Lambda)
 
 
 @pytest.mark.parametrize("source, expected_error", [
@@ -277,5 +287,161 @@ def test_expression_parse_reports_error(source: str, expected_error: str):
     mock_reporter = Mock()
     parser = Parser(mock_reporter, scan_tokens(source))
     parser.expression()
+
+    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
+
+
+def test_statement_parse_expression_statement():
+    source = "1, 2;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Expression)
+    assert isinstance(actual_stmt.expression, Binary)
+
+
+def test_statement_parse_empty_block():
+    source = "{}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Block)
+    assert 0 == len(actual_stmt.statements)
+
+
+def test_statement_parse_block():
+    source = "{class A{} fun f(e){return e;} f(A);}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Block)
+    assert isinstance(actual_stmt.statements[0], Class)
+    assert isinstance(actual_stmt.statements[1], Function)
+    assert isinstance(actual_stmt.statements[2], Expression)
+
+
+def test_statement_parse_break():
+    source = "break;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Break)
+
+
+def test_statement_parse_while():
+    source = 'while (1,2) {print "yes";}'
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, While)
+    assert isinstance(actual_stmt.condition, Binary)
+    assert isinstance(actual_stmt.body, Block)
+
+
+def test_statement_parse_return_without_value():
+    source = "return;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Return)
+    assert actual_stmt.value is None
+
+
+def test_statement_parse_return_with_value():
+    source = "return fun(){3;};"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Return)
+    assert isinstance(actual_stmt.value, Lambda)
+
+
+def test_statement_parse_print():
+    source = "print a=3;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Print)
+    assert isinstance(actual_stmt.expression, Assign)
+
+
+def test_statement_parse_if():
+    source = 'if (1,2) {print "yes";}'
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, If)
+    assert isinstance(actual_stmt.condition, Binary)
+    assert isinstance(actual_stmt.then_branch, Block)
+    assert actual_stmt.else_branch is None
+
+
+def test_statement_parse_if_else():
+    source = "if (1,2) true; else false;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, If)
+    assert isinstance(actual_stmt.condition, Binary)
+    assert True == actual_stmt.then_branch.expression.value
+    assert False == actual_stmt.else_branch.expression.value
+
+
+def test_statement_parse_empty_for():
+    source = 'for (;;) print "yes";'
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, While)
+    assert True == actual_stmt.condition.value
+    assert isinstance(actual_stmt.body, Print)
+
+
+def test_statement_parse_for_expression_initializer():
+    source = "for (a=1; a<len(s); a=a+1) print a;"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.statement()
+
+    assert isinstance(actual_stmt, Block)
+    assert 2 == len(actual_stmt.statements)
+    assert isinstance(actual_stmt.statements[0].expression, Assign)
+    assert isinstance(actual_stmt.statements[1], While)
+    assert isinstance(actual_stmt.statements[1].body, Block)
+    assert 2 == len(actual_stmt.statements[1].body.statements)
+    assert isinstance(actual_stmt.statements[1].body.statements[0], Print)
+    assert isinstance(actual_stmt.statements[1].body.statements[1].expression, Assign)
+
+
+@pytest.mark.parametrize("source, expected_error", [
+    ("expr", "Expect ';' after expression."),
+    ("{", "Expect '}' after block."),
+    ("break", "Expect ';' after break."),
+    ("while true {expr;}", "Expect '(' after 'while'."),
+    ("while (true {expr;}", "Expect ')' after while condition."),
+    ("return 3", "Expect ';' after return value."),
+    ("print 3", "Expect ';' after value."),
+    ("if true {expr;}", "Expect '(' after 'if'."),
+    ("if (true {expr;}", "Expect ')' after if condition."),
+    ("for true {expr;}", "Expect '(' after 'for'."),
+    ("for (a=1;a<3) {expr;}", "Expect ';' after loop condition."),
+    ("for (;;a=a+1 {expr;}", "Expect ')' after for clauses."),
+])
+def test_statement_parse_reports_error(source: str, expected_error: str):
+    mock_reporter = Mock()
+    parser = Parser(mock_reporter, scan_tokens(source))
+    with pytest.raises(ParseException):
+        parser.statement()
 
     mock_reporter.parse_error.assert_called_with(Any(), expected_error)
