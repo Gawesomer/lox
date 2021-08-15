@@ -156,9 +156,9 @@ def test_expression_parse_multiple_factors():
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
 
-    assert actual_expr.left.value == 1
-    assert actual_expr.right.left.value == 2
-    assert actual_expr.right.right.value == 3
+    assert actual_expr.left.left.value == 1
+    assert actual_expr.left.right.value == 2
+    assert actual_expr.right.value == 3
 
 
 def test_expression_ignore_invalid_factor():
@@ -171,6 +171,42 @@ def test_expression_ignore_invalid_factor():
 
     mock_reporter.parse_error.assert_called_with(Any(), expected_error)
     assert isinstance(actual_expr, Literal)
+
+
+def test_expression_parse_term():
+    source = "1*2--1"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Binary)
+    assert TokenType.MINUS == actual_expr.operator.type
+    assert isinstance(actual_expr.left, Binary)
+    assert isinstance(actual_expr.right, Unary)
+
+
+def test_expression_ignore_invalid_term():
+    source = "+3*4 4"
+    expected_error = "Term operator without left-hand operand."
+
+    mock_reporter = Mock()
+    parser = Parser(mock_reporter, scan_tokens(source))
+    actual_expr = parser.expression()
+
+    mock_reporter.parse_error.assert_called_with(Any(), expected_error)
+    assert isinstance(actual_expr, Literal)
+
+
+def test_expression_parse_multiple_terms():
+    source = "1+2-3"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Binary)
+    assert actual_expr.left.left.value == 1
+    assert actual_expr.left.right.value == 2
+    assert actual_expr.right.value == 3
 
 
 @pytest.mark.parametrize("source, expected_error", [

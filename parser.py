@@ -403,7 +403,7 @@ class Parser:
 
         while self.match(TokenType.SLASH, TokenType.STAR):
             operator = self.previous()
-            right = self.factor()
+            right = self.unary()
             expression = Binary(expression, operator, right)
 
         return expression
