@@ -162,6 +162,77 @@ def test_expression_parse_multiple_binaries():
     assert actual_expr.right.value == 3
 
 
+def test_expression_parse_logical_and():
+    source = "1==2 and 2!=3"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Logical)
+    assert TokenType.EQUAL_EQUAL == actual_expr.left.operator.type
+    assert TokenType.BANG_EQUAL == actual_expr.right.operator.type
+
+
+def test_expression_parse_logical_or():
+    source = "1==2 or true and false"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Logical)
+    assert TokenType.OR == actual_expr.operator.type
+    assert isinstance(actual_expr.left, Binary)
+    assert isinstance(actual_expr.right, Logical)
+
+
+def test_expression_parse_ternary():
+    source = "1 or 2 ? 3 or 4 : 5 or 6"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Ternary)
+    assert isinstance(actual_expr.conditional, Logical)
+    assert isinstance(actual_expr.truthy, Logical)
+    assert isinstance(actual_expr.falsy, Logical)
+
+
+def test_expression_parse_nested_ternaries():
+    source = "1 ? 2?3:4 : 5?6:7"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Ternary)
+    assert 1 == actual_expr.conditional.value
+    assert isinstance(actual_expr.truthy, Ternary)
+    assert 2 == actual_expr.truthy.conditional.value
+    assert isinstance(actual_expr.falsy, Ternary)
+    assert 5 == actual_expr.falsy.conditional.value
+
+
+def test_expression_parse_assignment():
+    source = "a = 1?2:3"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Assign)
+    assert "a" == actual_expr.name.lexeme
+    assert isinstance(actual_expr.value, Ternary)
+
+
+def test_expression_parse_set():
+    source = "object.method = 1?2:3"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_expr = parser.expression()
+
+    assert isinstance(actual_expr, Set)
+    assert isinstance(actual_expr.objekt, Variable)
+    assert isinstance(actual_expr.value, Ternary)
+
+
 @pytest.mark.parametrize("source, expected_error", [
     ("", "Expect expression."),
     ("super", "Expect '.' after 'super'."),
@@ -169,6 +240,8 @@ def test_expression_parse_multiple_binaries():
     ("(1", "Expect ')' after expression."),
     ("object.", "Expect property name after '.'."),
     ("f(arg", "Expect ')' after arguments."),
+    ("true?false", "Expect ':'."),
+    ("?true:false", "Expect expression."),
 ])
 def test_expression_parse_raises_error(source: str, expected_error: str):
     mock_reporter = Mock()
@@ -182,6 +255,8 @@ def test_expression_parse_raises_error(source: str, expected_error: str):
 @pytest.mark.parametrize("source, expected_error", [
     ("f({})".format(','.join([str(i) for i in range(256)])), "Can't have more than 255 arguments."),
     ("!=3>4 expr", "Equality operator without left-hand operand."),
+    ("?true expr", "Ternary operator without left-hand operand."),
+    (":true expr", "Ternary operator without left-hand operand."),
 ])
 def test_expression_parse_reports_error(source: str, expected_error: str):
     mock_reporter = Mock()
