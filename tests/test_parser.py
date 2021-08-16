@@ -498,9 +498,62 @@ def test_declaration_parse_variable_declaration_with_initializer():
     assert isinstance(actual_stmt.initializer, Assign)
 
 
+def test_declaration_parse_basic_function_declaration():
+    source = "fun f() {return f;}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.declaration()
+
+    assert isinstance(actual_stmt, Function)
+    assert 0 == len(actual_stmt.params)
+    assert 1 == len(actual_stmt.body)
+    assert isinstance(actual_stmt.body[0], Return)
+
+
+def test_declaration_parse_function_declaration_with_parameters():
+    source = "fun f(a, b, c) {return a+b+c;}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.declaration()
+
+    assert isinstance(actual_stmt, Function)
+    assert 3 == len(actual_stmt.params)
+    assert TokenType.IDENTIFIER == actual_stmt.params[0].type
+
+
+def test_declaration_parse_basic_class_declaration():
+    source = "class A{}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.declaration()
+
+    assert isinstance(actual_stmt, Class)
+    assert actual_stmt.superclass is None
+    assert 0 == len(actual_stmt.class_methods)
+    assert 0 == len(actual_stmt.instance_methods)
+    assert 0 == len(actual_stmt.getters)
+
+
+def test_declaration_parse_class_declaration():
+    source = "class A<A{class clsmethod(){} instmethod(){} getter{}}"
+
+    parser = Parser(Mock(), scan_tokens(source))
+    actual_stmt = parser.declaration()
+
+    assert isinstance(actual_stmt, Class)
+    assert isinstance(actual_stmt.superclass, Variable)
+    assert 1 == len(actual_stmt.class_methods)
+    assert 1 == len(actual_stmt.instance_methods)
+    assert 1 == len(actual_stmt.getters)
+
+
 @pytest.mark.parametrize("source, expected_error", [
     ("var = 3;", "Expect variable name."),
     ("var a = 3", "Expect ';' after variable declaration."),
+    ("fun f({}) {}".format(','.join(["a" for i in range(256)]), "{}"), "Can't have more than 255 parameters."),
+    ("fun f) {}", "Expect '(' after function declaration."),
+    ("fun f(a {}", "Expect ')' after parameters."),
+    ("fun f() }", "Expect '{' before the function body."),
 ])
 def test_declaration_parse_reports_error(source: str, expected_error: str):
     mock_reporter = Mock()
