@@ -100,10 +100,13 @@ class Parser:
     def class_declaration(self) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
 
-        superclass = None
+        superclasses = []
         if self.match(TokenType.LESS):
             self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
-            superclass = Variable(self.previous())
+            superclasses.append(Variable(self.previous()))
+            while self.match(TokenType.COMMA):
+                self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
+                superclasses.append(Variable(self.previous()))
 
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 
@@ -123,7 +126,7 @@ class Parser:
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
-        return Class(name, superclass, class_methods, instance_methods, getters)
+        return Class(name, superclasses, class_methods, instance_methods, getters)
 
     def function_declaration(self, kind: str) -> Stmt:
         name = self.consume(TokenType.IDENTIFIER, "Expect {} name.".format(kind))

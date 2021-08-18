@@ -5,9 +5,9 @@ from lox_callable import Callable
 
 class LoxClass(Callable):
 
-    def __init__(self, name: str, superclass: "LoxClass", class_methods: dict[str, LoxFunction], instance_methods: dict[str, LoxFunction], getters: dict[str, LoxFunction]):
+    def __init__(self, name: str, superclasses: list["LoxClass"], class_methods: dict[str, LoxFunction], instance_methods: dict[str, LoxFunction], getters: dict[str, LoxFunction]):
         self.name = name
-        self.superclass = superclass
+        self.superclasses = superclasses
         self.class_methods = class_methods
         self.instance_methods = instance_methods
         self.getters = getters
@@ -34,16 +34,20 @@ class LoxClass(Callable):
         class_method = self.find_class_method(name, recurse=False)
         if class_method is not None:
             return class_method
-        if self.superclass is not None:
-            return self.superclass.find_method(name)
+        for superclass in self.superclasses:
+            res = superclass.find_method(name)
+            if res is not None:
+                return res
         return None
 
     def find_class_method(self, name: str, recurse: bool = False) -> LoxFunction:
         if name in self.class_methods:
             return self.class_methods[name].bind(self)
         if recurse:
-            if self.superclass is not None:
-                return self.superclass.find_class_method(name, recurse=True)
+            for superclass in self.superclasses:
+                res = superclass.find_class_method(name, recurse=True)
+                if res is not None:
+                    return res
         return None
 
     def __str__(self) -> str:

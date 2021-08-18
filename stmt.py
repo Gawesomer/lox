@@ -49,9 +49,9 @@ class Block(Stmt):
 
 
 class Class(Stmt):
-    def __init__(self, name: Token, superclass: Variable, class_methods: list['Function'], instance_methods: list['Function'], getters: list['Function']):
+    def __init__(self, name: Token, superclasses: list[Variable], class_methods: list['Function'], instance_methods: list['Function'], getters: list['Function']):
         self.name = name
-        self.superclass = superclass
+        self.superclasses = superclasses
         self.class_methods = class_methods
         self.instance_methods = instance_methods
         self.getters = getters

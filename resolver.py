@@ -110,14 +110,16 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
-        if stmt.superclass is not None and stmt.name.lexeme == stmt.superclass.name.lexeme:
-            self.interpreter.reporter.parse_error(stmt.superclass.name, "A class can't inherit from itself.")
+        if len(stmt.superclasses) > 0 and stmt.name.lexeme in {superclass.name.lexeme for superclass in  stmt.superclasses}:
+            self.interpreter.reporter.parse_error(stmt.name, "A class can't inherit from itself.")
 
-        if stmt.superclass is not None:
+        if len(stmt.superclasses) > 0:
             self.current_class = ClassType.SUBCLASS
-            self.resolve(stmt.superclass)
+            for superclass in stmt.superclasses:
+                self.resolve(superclass)
 
-        if stmt.superclass is not None:
+        if len(stmt.superclasses) > 0:
+            # TODO: Resolve super for every parent class
             self.begin_scope()
             self.scopes[-1]["super"] = {"is_defined": True, "token": stmt.name}
 
@@ -132,7 +134,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
         self.end_scope()
 
-        if stmt.superclass is not None:
+        if len(stmt.superclasses) > 0:
             self.end_scope()
 
         self.current_class = enclosing_class

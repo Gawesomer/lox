@@ -198,17 +198,18 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         raise BreakUnwindStackException("Unwinding stack to break out of loop.")
 
     def visit_class_stmt(self, stmt: Class):
-        superclass = None
-        if stmt.superclass is not None:
-            superclass = self.evaluate(stmt.superclass)
-            if not isinstance(superclass, LoxClass):
-                raise RuntimeException(stmt.superclass.name, "Superclass must be a class.")
+        evaluated_superclasses = []
+        for superclass in stmt.superclasses:
+            evaluated_superclass = self.evaluate(superclass)
+            if not isinstance(evaluated_superclass, LoxClass):
+                raise RuntimeException(superclass.name, "Superclass must be a class.")
+            evaluated_superclasses.append(evaluated_superclass)
 
         self.environment.initialize(stmt.name.lexeme, None)
 
-        if stmt.superclass is not None:
+        if len(evaluated_superclasses) > 0:
             self.environment = Environment(self.environment)
-            self.environment.initialize("super", superclass)
+            self.environment.initialize("super", evaluated_superclasses[0])
 
         class_methods = dict()
         for method in stmt.class_methods:
@@ -223,9 +224,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             function = LoxFunction(method, self.environment, method.name.lexeme == "init")
             getters[method.name.lexeme] = function
 
-        klass = LoxClass(stmt.name.lexeme, superclass, class_methods, instance_methods, getters)
+        klass = LoxClass(stmt.name.lexeme, evaluated_superclasses, class_methods, instance_methods, getters)
 
-        if superclass is not None:
+        if len(evaluated_superclasses) > 0:
             self.environment = self.environment.enclosing
 
         self.environment.assign(stmt.name, klass)
