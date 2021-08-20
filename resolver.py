@@ -1,7 +1,7 @@
 import typing
 from enum import Enum, auto
 
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Super, Ternary, This, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from interpreter import Interpreter
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -64,14 +64,6 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(expr.value)
         self.resolve(expr.objekt)
 
-    def visit_super_expr(self, expr: Super) -> object:
-        if self.current_class == ClassType.NONE:
-            self.interpreter.reporter.parse_error(expr.keyword, "Can't use 'super' outside of a class.")
-        elif self.current_class != ClassType.SUBCLASS:
-            self.interpreter.reporter.parse_error(expr.keyword, "Can't use 'super' in a class with no superclass.")
-
-        self.resolve_local(expr, expr.keyword)
-
     def visit_ternary_expr(self, expr: Ternary) -> object:
         self.resolve(expr.conditional)
         self.resolve(expr.truthy)
@@ -110,7 +102,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
-        if len(stmt.superclasses) > 0 and stmt.name.lexeme in {superclass.name.lexeme for superclass in  stmt.superclasses}:
+        if stmt.name.lexeme in {superclass.name.lexeme for superclass in  stmt.superclasses}:
             self.interpreter.reporter.parse_error(stmt.name, "A class can't inherit from itself.")
 
         if len(stmt.superclasses) > 0:
@@ -118,10 +110,8 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
             for superclass in stmt.superclasses:
                 self.resolve(superclass)
 
-        if len(stmt.superclasses) > 0:
-            # TODO: Resolve super for every parent class
-            self.begin_scope()
-            self.scopes[-1]["super"] = {"is_defined": True, "token": stmt.name}
+        self.begin_scope()
+        self.scopes[-1]["super"] = {"is_defined": True, "token": stmt.name}
 
         self.begin_scope()
         self.scopes[-1]["this"] = {"is_defined": True, "token": stmt.name}
@@ -133,9 +123,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
             self.resolve_function(method, declaration)
 
         self.end_scope()
-
-        if len(stmt.superclasses) > 0:
-            self.end_scope()
+        self.end_scope()
 
         self.current_class = enclosing_class
 
@@ -225,7 +213,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
     def end_scope(self):
         scope = self.scopes.pop()
-        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys() if not (isinstance(expr, This) or isinstance(expr, Super))}
+        used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys() if not (isinstance(expr, This))}
         for var in set(scope.keys()).difference(used_locals):
             if var != "this" and var != "super":
                 self.interpreter.reporter.parse_error(scope[var]["token"], "Unused local variable {}.".format(var))

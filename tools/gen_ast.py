@@ -23,7 +23,6 @@ class GenerateAST:
                 "Literal  ; value: object",
                 "Logical  ; left: Expr, operator: Token, right: Expr",
                 "Set      ; objekt: Expr, name: Token, value: Expr",
-                "Super    ; keyword: Token, method: Token",
                 "Ternary  ; conditional: Expr, truthy: Expr, falsy: Expr",
                 "This     ; keyword: Token",
                 "Unary    ; operator: Token, right: Expr",

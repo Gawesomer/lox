@@ -2,7 +2,7 @@ from unittest.mock import Mock
 import pytest
 from tests.conftest import Any
 
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Super, Ternary, This, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from lox_token import Token
 from parser import Parser, ParseException
 from scanner import Scanner

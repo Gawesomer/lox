@@ -1,8 +1,8 @@
 from instance import Instance
-from lox_callable import Callable, Clock
+from lox_callable import Callable, Clock, Super
 from lox_class import LoxClass
 from environment import Environment
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Super, Ternary, This, Unary, Variable
+from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, ReturnException, RuntimeException
 from function import LoxFunction
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
@@ -145,19 +145,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         value = self.evaluate(expr.value)
         objekt.set(expr.name, value)
 
-    def visit_super_expr(self, expr: Super) -> object:
-        distance = self.locals[expr]
-        superclass = self.environment.get_at_no_check(distance, "super")
-
-        objekt = self.environment.get_at_no_check(distance-1, "this")
-
-        method = superclass.find_method(expr.method.lexeme)
-
-        if method is None:
-            raise RuntimeException(expr.method, "Undefined property '{}'.".format(expr.method.lexeme))
-
-        return method.bind(objekt)
-
     def visit_ternary_expr(self, expr: Ternary) -> object:
         conditional = self.evaluate(expr.conditional)
         if conditional:
@@ -207,9 +194,8 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         self.environment.initialize(stmt.name.lexeme, None)
 
-        if len(evaluated_superclasses) > 0:
-            self.environment = Environment(self.environment)
-            self.environment.initialize("super", evaluated_superclasses[0])
+        self.environment = Environment(self.environment)
+        self.environment.initialize("super", Super())
 
         class_methods = dict()
         for method in stmt.class_methods:
@@ -226,8 +212,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         klass = LoxClass(stmt.name.lexeme, evaluated_superclasses, class_methods, instance_methods, getters)
 
-        if len(evaluated_superclasses) > 0:
-            self.environment = self.environment.enclosing
+        self.environment = self.environment.enclosing
 
         self.environment.assign(stmt.name, klass)
 
