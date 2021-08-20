@@ -3,7 +3,7 @@ from lox_callable import Callable, Clock, Super
 from lox_class import LoxClass
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
-from exception import BreakUnwindStackException, ReturnException, RuntimeException
+from exception import BreakUnwindStackException, ReturnException, RuntimeException, SuperException
 from function import LoxFunction
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -28,6 +28,8 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
                 self.execute(statement)
         except RuntimeException as error:
             self.reporter.runtime_error(error)
+        except SuperException as error:
+            self.reporter.super_error(error)
 
     def visit_assign_expr(self, expr: Assign) -> object:
         value = self.evaluate(expr.value)

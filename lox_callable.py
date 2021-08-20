@@ -1,5 +1,7 @@
 import time
 
+from exception import SuperException
+
 
 class Callable:
 
@@ -28,10 +30,16 @@ class Super(Callable):
         return 3
 
     def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
-        if hasattr(arguments[1], "superclasses"):
+        if arguments[0].__class__.__name__ != "LoxClass":
+            raise SuperException("First argument to super() must be a Class.")
+        if not isinstance(arguments[2], str):
+            raise SuperException("Third argument to super() must be a string.")
+        if arguments[1].__class__.__name__ == "LoxClass":
             ancestor = self.find_ancestor(arguments[0], arguments[1])
-        else:
+        elif arguments[1].__class__.__name__ == "Instance":
             ancestor = self.find_ancestor(arguments[0], arguments[1].klass)
+        else:
+            raise SuperException("Second argument to super() must be a Class or Instance.")
         return ancestor.find_method(arguments[2])
 
     def find_ancestor(self, ancestor: "LoxClass", klass: "LoxClass") -> "LoxClass":
