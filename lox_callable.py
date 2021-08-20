@@ -40,12 +40,16 @@ class Super(Callable):
         ancestor = None
         if arguments[1].__class__.__name__ == "LoxClass":
             ancestor = self.find_ancestor(arguments[0], arguments[1])
-        elif arguments[1].__class__.__name__ == "Instance":
+        else:
             ancestor = self.find_ancestor(arguments[0], arguments[1].klass)
 
         if ancestor is None:
             raise SuperException("No matching ancestor found in inheritance hierarchy.")
-        inherited_method = ancestor.find_method(arguments[2])
+
+        if arguments[1].__class__.__name__ == "LoxClass":
+            inherited_method = ancestor.find_class_method(arguments[2], recurse=True)
+        else:
+            inherited_method = ancestor.find_method(arguments[2])
         if inherited_method is None:
             raise SuperException("super() found no matching method.")
         return inherited_method.bind(arguments[1])
