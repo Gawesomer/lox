@@ -90,7 +90,7 @@ class Lox:
 
     @classmethod
     def super_error(cls, error: SuperException):
-        print(error)
+        print("super(): {}".format(error))
         cls.had_runtime_error = True
 
 
