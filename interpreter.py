@@ -21,6 +21,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.locals = dict()
 
         self.globals.initialize("clock", Clock())
+        self.globals.initialize("super", Super())
 
     def interpret(self, statements: list[Stmt]):
         try:
@@ -196,9 +197,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         self.environment.initialize(stmt.name.lexeme, None)
 
-        self.environment = Environment(self.environment)
-        self.environment.initialize("super", Super())
-
         class_methods = dict()
         for method in stmt.class_methods:
             function = LoxFunction(method, self.environment, method.name.lexeme == "init")
@@ -213,8 +211,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             getters[method.name.lexeme] = function
 
         klass = LoxClass(stmt.name.lexeme, evaluated_superclasses, class_methods, instance_methods, getters)
-
-        self.environment = self.environment.enclosing
 
         self.environment.assign(stmt.name, klass)
 

@@ -111,9 +111,6 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
                 self.resolve(superclass)
 
         self.begin_scope()
-        self.scopes[-1]["super"] = {"is_defined": True, "token": stmt.name}
-
-        self.begin_scope()
         self.scopes[-1]["this"] = {"is_defined": True, "token": stmt.name}
 
         for method in stmt.class_methods+stmt.instance_methods+stmt.getters:
@@ -122,7 +119,6 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
                 declaration = FunctionType.INITIALIZER
             self.resolve_function(method, declaration)
 
-        self.end_scope()
         self.end_scope()
 
         self.current_class = enclosing_class
