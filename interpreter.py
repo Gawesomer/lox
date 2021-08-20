@@ -109,12 +109,15 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         if isinstance(objekt, Instance):
             res = objekt.get(expr.name)
             if expr.name.lexeme in objekt.klass.getters:
-                return res.call(self, ())
-            return res
+                res = res.call(self, ())
         elif isinstance(objekt, LoxClass):
-            return objekt.find_class_method(expr.name.lexeme, recurse=True)
+            res = objekt.find_class_method(expr.name.lexeme, recurse=True)
+        else:
+            raise RuntimeException(expr.name, "Only instances have properties.")
 
-        raise RuntimeException(expr.name, "Only instances have properties.")
+        if res is None:
+            raise RuntimeException(expr.name, "Undefined property '{}'.".format(expr.name.lexeme))
+        return res
 
     def visit_grouping_expr(self, expr: Grouping) -> object:
         return self.evaluate(expr.expression)
