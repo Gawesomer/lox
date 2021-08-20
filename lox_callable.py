@@ -48,7 +48,7 @@ class Super(Callable):
         inherited_method = ancestor.find_method(arguments[2])
         if inherited_method is None:
             raise SuperException("super() found no matching method.")
-        return inherited_method
+        return inherited_method.bind(arguments[1])
 
     def find_ancestor(self, ancestor: "LoxClass", klass: "LoxClass") -> "LoxClass":
         if klass.name == ancestor.name:
