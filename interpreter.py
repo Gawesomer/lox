@@ -1,5 +1,5 @@
 from instance import Instance
-from lox_callable import Callable, Clock, Inner, NoOp, Super
+from lox_callable import Callable, Clock, Inner, NoOp
 from lox_class import LoxClass
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
@@ -23,7 +23,6 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.globals.initialize("clock", Clock())
         self.globals.initialize("inner", Inner())
         self.globals.initialize("noop", NoOp())
-        self.globals.initialize("super", Super())
 
     def interpret(self, statements: list[Stmt]):
         try:
