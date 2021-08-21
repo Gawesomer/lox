@@ -3,7 +3,7 @@ from lox_callable import Callable, Clock, Inner, NoOp, Super
 from lox_class import LoxClass
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
-from exception import BreakUnwindStackException, NativeException, ReturnException, RuntimeExceptio
+from exception import BreakUnwindStackException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -110,7 +110,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         objekt = self.evaluate(expr.objekt)
         if isinstance(objekt, Instance):
             res = objekt.get(expr.name)
-            if expr.name.lexeme in objekt.klass.getters:
+            if isinstance(res, LoxFunction) and res.is_getter:
                 res = res.call(self, ())
         elif isinstance(objekt, LoxClass):
             res = objekt.find_class_method(expr.name.lexeme, recurse=True)
@@ -126,7 +126,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_lambda_expr(self, expr: Lambda) -> object:
         stmt = Function(None, expr.params, expr.body)
-        function = LoxFunction(stmt, self.environment, False)
+        function = LoxFunction(stmt, self.environment)
         return function
 
     def visit_literal_expr(self, expr: Literal) -> object:
@@ -204,15 +204,28 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         class_methods = dict()
         for method in stmt.class_methods:
-            function = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            function = LoxFunction(
+                method,
+                self.environment,
+                is_initializer=method.name.lexeme == "init"
+            )
             class_methods[method.name.lexeme] = function
         instance_methods = dict()
         for method in stmt.instance_methods:
-            function = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            function = LoxFunction(
+                method,
+                self.environment,
+                is_initializer=method.name.lexeme == "init"
+            )
             instance_methods[method.name.lexeme] = function
         getters = dict()
         for method in stmt.getters:
-            function = LoxFunction(method, self.environment, method.name.lexeme == "init")
+            function = LoxFunction(
+                method,
+                self.environment,
+                is_initializer=method.name.lexeme == "init",
+                is_getter=True
+            )
             getters[method.name.lexeme] = function
 
         klass = LoxClass(stmt.name.lexeme, evaluated_superclasses, class_methods, instance_methods, getters)
@@ -225,7 +238,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             print(self.stringify(value))
 
     def visit_function_stmt(self, stmt: Function):
-        function = LoxFunction(stmt, self.environment, False)
+        function = LoxFunction(stmt, self.environment)
         if stmt.name is not None:
             self.environment.initialize(stmt.name.lexeme, function)
 

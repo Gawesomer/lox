@@ -7,10 +7,11 @@ from stmt import Function
 
 class LoxFunction(Callable):
 
-    def __init__(self, declaration: Function, closure: Environment, is_initializer: bool):
+    def __init__(self, declaration: Function, closure: Environment, is_initializer: bool = False, is_getter: bool = False):
         self.declaration = declaration
         self.closure = closure
         self.is_initializer = is_initializer
+        self.is_getter = is_getter
 
     def arity(self) -> int:
         return len(self.declaration.params)
@@ -33,7 +34,7 @@ class LoxFunction(Callable):
     def bind(self, instance: [Instance, "LoxClass"]) -> "LoxFunction":
         environment = Environment(self.closure)
         environment.initialize("this", instance)
-        return LoxFunction(self.declaration, environment, self.is_initializer)
+        return LoxFunction(self.declaration, environment, self.is_initializer, self.is_getter)
 
     def __str__(self) -> str:
         if self.declaration.name is not None:
