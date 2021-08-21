@@ -1,0 +1,116 @@
+/* Here are a few non-standard Lox features
+ * implemented as part of the extra challenges */
+
+
+// Comma operator evaluates multiple expressions and returns the right operand
+var a;
+print a=1, "Initialized variable a";
+print "Validate that `a` has been initialized to: " + a;
+
+
+print "Ternary operator " + (true ? "works":"doesn't work");
+
+
+for (;;) {
+    // Need to break out of this infinite loop
+    break;
+}
+
+
+print fun(name) {
+    var addStr = fun(a, b){return a+b;};
+    return addStr("Hello from ", name);
+    }("lambda");
+
+
+// Closures work with lambdas
+var a = "global";
+{
+    var showA = fun() {
+        print a;
+    };
+
+    showA();
+    var a = "block";
+    showA();
+}
+
+
+// Class methods
+class Math {
+  class square(n) {
+    return n * n;
+  }
+}
+
+print "3*3 = " + Math.square(3);
+
+
+// Getters
+class Circle {
+    init(radius) {
+      this.radius = radius;
+    }
+
+    area {
+      return 3.141592653 * Math.square(this.radius);
+    }
+}
+
+var circle = Circle(4);
+print "Area of circle with radius 4 is " + circle.area; // Prints roughly "50.2655".
+
+
+// Inheritance searches from the top of the class hierarchy
+class SuperClass {
+    class f() {
+        print "This is the superclass";
+    }
+}
+
+class SubClass < SuperClass {
+    class f() {
+        print "This is the subclass";
+    }
+}
+
+SubClass.f();
+
+
+// Inner is used to allow extending methods
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+    inner(Doughnut, this, "cook")();
+    print "Place in a nice box.";
+  }
+}
+
+class BostonCream < Doughnut {
+  cook() {
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+
+
+// Multiple inherittance
+// Linerarizes the inherittance tree using a depth first traversal
+class A {
+    name {
+        return "A";
+    }
+}
+
+class B {
+    name {
+        return "B";
+    }
+}
+
+class C<A,B{}
+class D<B,A{}
+
+print C().name;	// A
+print D().name;	// B
