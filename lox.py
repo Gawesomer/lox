@@ -3,7 +3,7 @@ import sys
 from ast_printer import ASTPrinter
 from interpreter import Interpreter
 from parser import Parser
-from exception import RuntimeException, SuperException
+from exception import NativeException, RuntimeException
 from resolver import Resolver
 from scanner import Scanner
 from lox_token import Token
@@ -89,8 +89,8 @@ class Lox:
         cls.had_runtime_error = True
 
     @classmethod
-    def super_error(cls, error: SuperException):
-        print("super(): {}".format(error))
+    def native_error(cls, error: NativeException):
+        print(error)
         cls.had_runtime_error = True
 
 

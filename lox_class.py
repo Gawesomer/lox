@@ -26,7 +26,12 @@ class LoxClass(Callable):
 
         return instance
 
-    def find_method(self, name: str) -> LoxFunction:
+    def find_method(self, name: str, stop_at: "LoxClass" = None) -> LoxFunction:
+        for superclass in self.superclasses:
+            if superclass != stop_at:
+                res = superclass.find_method(name)
+                if res is not None:
+                    return res
         if name in self.getters:
             return self.getters[name]
         if name in self.instance_methods:
@@ -34,20 +39,17 @@ class LoxClass(Callable):
         class_method = self.find_class_method(name, recurse=False)
         if class_method is not None:
             return class_method
-        for superclass in self.superclasses:
-            res = superclass.find_method(name)
-            if res is not None:
-                return res
         return None
 
-    def find_class_method(self, name: str, recurse: bool = False) -> LoxFunction:
-        if name in self.class_methods:
-            return self.class_methods[name].bind(self)
+    def find_class_method(self, name: str, stop_at: "LoxClass" = None, recurse: bool = False) -> LoxFunction:
         if recurse:
             for superclass in self.superclasses:
-                res = superclass.find_class_method(name, recurse=True)
-                if res is not None:
-                    return res
+                if superclass != stop_at:
+                    res = superclass.find_class_method(name, stop_at=stop_at, recurse=True)
+                    if res is not None:
+                        return res
+        if name in self.class_methods:
+            return self.class_methods[name].bind(self)
         return None
 
     def __str__(self) -> str:

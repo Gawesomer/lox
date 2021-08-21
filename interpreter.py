@@ -1,9 +1,9 @@
 from instance import Instance
-from lox_callable import Callable, Clock, Super
+from lox_callable import Callable, Clock, Inner, NoOp, Super
 from lox_class import LoxClass
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
-from exception import BreakUnwindStackException, ReturnException, RuntimeException, SuperException
+from exception import BreakUnwindStackException, NativeException, ReturnException, RuntimeExceptio
 from function import LoxFunction
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -21,16 +21,18 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.locals = dict()
 
         self.globals.initialize("clock", Clock())
+        self.globals.initialize("inner", Inner())
+        self.globals.initialize("noop", NoOp())
         self.globals.initialize("super", Super())
 
     def interpret(self, statements: list[Stmt]):
         try:
             for statement in statements:
                 self.execute(statement)
+        except NativeException as error:
+            self.reporter.native_error(error)
         except RuntimeException as error:
             self.reporter.runtime_error(error)
-        except SuperException as error:
-            self.reporter.super_error(error)
 
     def visit_assign_expr(self, expr: Assign) -> object:
         value = self.evaluate(expr.value)

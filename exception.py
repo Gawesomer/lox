@@ -5,6 +5,10 @@ class BreakUnwindStackException(Exception):
     pass
 
 
+class NativeException(Exception):
+    pass
+
+
 class ReturnException(Exception):
 
     def __init__(self, value: object, *args, **kwargs):
@@ -17,7 +21,3 @@ class RuntimeException(Exception):
     def __init__(self, token: Token, message: str):
         super().__init__(message)
         self.token = token
-
-
-class SuperException(Exception):
-    pass

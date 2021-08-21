@@ -1,6 +1,6 @@
 import time
 
-from exception import SuperException
+from exception import NativeException
 
 
 class Callable:
@@ -21,7 +21,50 @@ class Clock(Callable):
        return time.time() 
 
     def __str__(self) -> str:
-        return "<native fn>"
+        return "<native fn: clock>"
+
+
+class Inner(Callable):
+
+    def arity(self) -> int:
+        return 3
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        stop_class, instance, method_name = arguments
+
+        if stop_class.__class__.__name__ != "LoxClass":
+            raise NativeException("inner: First argument must be a Class.")
+        if instance.__class__.__name__ not in ("LoxClass", "Instance"):
+            raise NativeException("inner: Second  argument must be a Class or Instance.")
+        if not isinstance(method_name, str):
+            raise NativeException("inner: Third  argument must be a string.")
+
+        if instance.__class__.__name__ == "LoxClass":
+            inner_method = instance.find_class_method(method_name, stop_at=stop_class, recurse=True)
+        else:
+            inner_method = instance.klass.find_method(method_name, stop_at=stop_class)
+
+        if inner_method is None:
+            return NoOp()
+        return inner_method.bind(instance)
+
+    def __str__(self) -> str:
+        return "<native fn: inner>"
+
+
+class NoOp(Callable):
+
+    def arity(self) -> int:
+        class AlwaysEq:
+            def __eq__(self, other: object) -> bool:
+                return True
+        return AlwaysEq()
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        return None
+
+    def __str__(self) -> str:
+        return "<native fn: noop>"
 
 
 class Super(Callable):
@@ -31,11 +74,11 @@ class Super(Callable):
 
     def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
         if arguments[0].__class__.__name__ != "LoxClass":
-            raise SuperException("First argument to super() must be a Class.")
+            raise NativeException("super: First argument must be a Class.")
         if arguments[1].__class__.__name__ not in ("LoxClass", "Instance"):
-            raise SuperException("Second argument to super() must be a Class or Instance.")
+            raise NativeException("super: Second argument must be a Class or Instance.")
         if not isinstance(arguments[2], str):
-            raise SuperException("Third argument to super() must be a string.")
+            raise NativeException("super: Third argument must be a string.")
 
         ancestor = None
         if arguments[1].__class__.__name__ == "LoxClass":
@@ -44,14 +87,14 @@ class Super(Callable):
             ancestor = self.find_ancestor(arguments[0], arguments[1].klass)
 
         if ancestor is None:
-            raise SuperException("No matching ancestor found in inheritance hierarchy.")
+            raise NativeException("super: No matching ancestor found in inheritance hierarchy.")
 
         if arguments[1].__class__.__name__ == "LoxClass":
             inherited_method = ancestor.find_class_method(arguments[2], recurse=True)
         else:
             inherited_method = ancestor.find_method(arguments[2])
         if inherited_method is None:
-            raise SuperException("super() found no matching method.")
+            raise NativeException("super: Found no matching method.")
         return inherited_method.bind(arguments[1])
 
     def find_ancestor(self, ancestor: "LoxClass", klass: "LoxClass") -> "LoxClass":
@@ -63,3 +106,6 @@ class Super(Callable):
                 return res
 
         return None
+
+    def __str__(self) -> str:
+        return "<native fn: super>"
