@@ -73,29 +73,31 @@ class Super(Callable):
         return 3
 
     def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
-        if arguments[0].__class__.__name__ != "LoxClass":
+        start_class, instance, method_name = arguments
+
+        if start_class.__class__.__name__ != "LoxClass":
             raise NativeException("super: First argument must be a Class.")
-        if arguments[1].__class__.__name__ not in ("LoxClass", "Instance"):
+        if instance.__class__.__name__ not in ("LoxClass", "Instance"):
             raise NativeException("super: Second argument must be a Class or Instance.")
-        if not isinstance(arguments[2], str):
+        if not isinstance(method_name, str):
             raise NativeException("super: Third argument must be a string.")
 
         ancestor = None
-        if arguments[1].__class__.__name__ == "LoxClass":
-            ancestor = self.find_ancestor(arguments[0], arguments[1])
+        if instance.__class__.__name__ == "LoxClass":
+            ancestor = self.find_ancestor(start_class, instance)
         else:
-            ancestor = self.find_ancestor(arguments[0], arguments[1].klass)
+            ancestor = self.find_ancestor(start_class, instance.klass)
 
         if ancestor is None:
             raise NativeException("super: No matching ancestor found in inheritance hierarchy.")
 
-        if arguments[1].__class__.__name__ == "LoxClass":
-            inherited_method = ancestor.find_class_method(arguments[2], recurse=True)
+        if instance.__class__.__name__ == "LoxClass":
+            inherited_method = ancestor.find_class_method(method_name, recurse=True)
         else:
-            inherited_method = ancestor.find_method(arguments[2])
+            inherited_method = ancestor.find_method(method_name)
         if inherited_method is None:
             raise NativeException("super: Found no matching method.")
-        return inherited_method.bind(arguments[1])
+        return inherited_method.bind(instance)
 
     def find_ancestor(self, ancestor: "LoxClass", klass: "LoxClass") -> "LoxClass":
         if klass.name == ancestor.name:
