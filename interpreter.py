@@ -1,10 +1,11 @@
 from instance import Instance
-from lox_callable import Callable, Clock, Inner, NoOp
+from lox_callable import Callable
 from lox_class import LoxClass
 from environment import Environment
 from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
+from native import Clock, Inner, NoOp
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
