@@ -102,7 +102,7 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.declare(stmt.name)
         self.define(stmt.name)
 
-        if stmt.name.lexeme in {superclass.name.lexeme for superclass in  stmt.superclasses}:
+        if stmt.name.lexeme in {superclass.name.lexeme for superclass in stmt.superclasses}:
             self.interpreter.reporter.parse_error(stmt.name, "A class can't inherit from itself.")
 
         if len(stmt.superclasses) > 0:
@@ -211,5 +211,5 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         scope = self.scopes.pop()
         used_locals = {expr.name.lexeme for expr in self.interpreter.locals.keys() if not (isinstance(expr, This))}
         for var in set(scope.keys()).difference(used_locals):
-            if var != "this" and var != "super":
+            if var != "this":
                 self.interpreter.reporter.parse_error(scope[var]["token"], "Unused local variable {}.".format(var))
