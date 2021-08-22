@@ -1,6 +1,6 @@
 import typing
 
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
+from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -46,7 +46,9 @@ class Parser:
         block          → "{" declaration* "}" ;
         expression     → inv_comma ;
         inv_comma      → "," comma ;
-        comma          → assignment ( "," assignment )* ;
+        comma          → array ( "," array )* ;
+        array          → "[ assignment? ( "," assignment )* "]"
+                       | assignment ;
         assignment     → ( call "." )? IDENTIFIER "=" assignment
                        | inv_ternary
                        | lambda ;
@@ -64,11 +66,10 @@ class Parser:
         inv_factor     → ( "/" | "*" ) factory ;
         factor         → unary ( ( "/" | "*" ) unary )* ;
         unary          → ( "!" | "-" ) unary | call ;
-        call           → primary ( "(" arguments? ")" | "." IDENTIFIER )* ;
+        call           → primary ( "(" arguments? ")" | "." IDENTIFIER | "[" assignment "]" )* ;
         arguments      → assignment ( "," assignment )* ;
         primary        → "true" | "false" | "nil" | "this"
-                       | NUMBER | STRING | IDENTIFIER | "(" expression ")"
-                       | "super" "." IDENTIFIER ;
+                       | NUMBER | STRING | IDENTIFIER | "(" expression ")" ;
     """
 
     def __init__(self, reporter: "Lox", tokens: list[Token]):
@@ -268,7 +269,20 @@ class Parser:
         return self.comma()
 
     def comma(self) -> Expr:
-        return self.parse_binary("Comma", (TokenType.COMMA,), self.assignment)
+        return self.parse_binary("Comma", (TokenType.COMMA,), self.array)
+
+    def array(self) -> Expr:
+        if self.match(TokenType.LEFT_BRACKET):
+            if self.match(TokenType.RIGHT_BRACKET):
+                return Array([])
+            elements = [self.assignment()]
+            while not self.check(TokenType.RIGHT_BRACKET) and not self.is_at_end():
+                self.consume(TokenType.COMMA, "Expect ',' to delimit array elements.")
+                elements.append(self.assignment())
+            self.consume(TokenType.RIGHT_BRACKET, "Expect ']' to complete array.")
+            return Array(elements)
+
+        return self.assignment()
 
     def assignment(self) -> Expr:
         if self.match(TokenType.FUN):
@@ -289,6 +303,8 @@ class Parser:
                 return Assign(name, value)
             elif isinstance(expr, Get):
                 return Set(expr.objekt, expr.name, value)
+            elif isinstance(expr, Index):
+                return SetArray(expr.objekt, expr.index, value, expr.bracket)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -381,6 +397,11 @@ class Parser:
             elif self.match(TokenType.DOT):
                 name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
                 expr = Get(expr, name)
+            elif self.match(TokenType.LEFT_BRACKET):
+                bracket = self.previous()
+                index = self.assignment()
+                expr = Index(expr, index, bracket)
+                self.consume(TokenType.RIGHT_BRACKET, "Expect ']' after indexing operation.")
             else:
                 break
 

@@ -53,6 +53,10 @@ class Scanner:
             return self.new_token(TokenType.LEFT_BRACE)
         elif c == '}':
             return self.new_token(TokenType.RIGHT_BRACE)
+        elif c == '[':
+            return self.new_token(TokenType.LEFT_BRACKET)
+        elif c == ']':
+            return self.new_token(TokenType.RIGHT_BRACKET)
         elif c == ',':
             return self.new_token(TokenType.COMMA)
         elif c == '.':

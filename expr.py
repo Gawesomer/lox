@@ -4,6 +4,9 @@ from lox_token import Token
 
 class Expr:
     class Visitor:
+        def visit_array_expr(self, expr: 'Array'):
+            raise NotImplementedError
+
         def visit_assign_expr(self, expr: 'Assign'):
             raise NotImplementedError
 
@@ -11,6 +14,9 @@ class Expr:
             raise NotImplementedError
 
         def visit_call_expr(self, expr: 'Call'):
+            raise NotImplementedError
+
+        def visit_index_expr(self, expr: 'Index'):
             raise NotImplementedError
 
         def visit_get_expr(self, expr: 'Get'):
@@ -31,6 +37,9 @@ class Expr:
         def visit_set_expr(self, expr: 'Set'):
             raise NotImplementedError
 
+        def visit_setarray_expr(self, expr: 'SetArray'):
+            raise NotImplementedError
+
         def visit_ternary_expr(self, expr: 'Ternary'):
             raise NotImplementedError
 
@@ -46,6 +55,14 @@ class Expr:
 
     def accept(self, visitor):
         raise NotImplementedError
+
+
+class Array(Expr):
+    def __init__(self, elements: list[Expr]):
+        self.elements = elements
+
+    def accept(self, visitor):
+        return visitor.visit_array_expr(self)
 
 
 class Assign(Expr):
@@ -75,6 +92,16 @@ class Call(Expr):
 
     def accept(self, visitor):
         return visitor.visit_call_expr(self)
+
+
+class Index(Expr):
+    def __init__(self, objekt: Expr, index: Expr, bracket: Token):
+        self.objekt = objekt
+        self.index = index
+        self.bracket = bracket
+
+    def accept(self, visitor):
+        return visitor.visit_index_expr(self)
 
 
 class Get(Expr):
@@ -129,6 +156,17 @@ class Set(Expr):
 
     def accept(self, visitor):
         return visitor.visit_set_expr(self)
+
+
+class SetArray(Expr):
+    def __init__(self, objekt: Expr, index: Expr, value: Expr, bracket: Token):
+        self.objekt = objekt
+        self.index = index
+        self.value = value
+        self.bracket = bracket
+
+    def accept(self, visitor):
+        return visitor.visit_setarray_expr(self)
 
 
 class Ternary(Expr):

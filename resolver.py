@@ -1,7 +1,7 @@
 import typing
 from enum import Enum, auto
 
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
+from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from interpreter import Interpreter
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
@@ -30,6 +30,10 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.current_class = ClassType.NONE
         self.current_loop = False
 
+    def visit_array_expr(self, expr: Array) -> object:
+        for element in expr.elements:
+            self.resolve(element)
+
     def visit_assign_expr(self, expr: Assign) -> object:
         self.resolve(expr.value)
         self.resolve_local(expr, expr.name)
@@ -43,6 +47,10 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
         for argument in expr.arguments:
             self.resolve(argument)
+
+    def visit_index_expr(self, expr: Index) -> object:
+        self.resolve(expr.objekt)
+        self.resolve(expr.index)
 
     def visit_get_expr(self, expr: Get) -> object:
         self.resolve(expr.objekt)
@@ -62,6 +70,11 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
 
     def visit_set_expr(self, expr: Set) -> object:
         self.resolve(expr.value)
+        self.resolve(expr.objekt)
+
+    def visit_setarray_expr(self, expr: SetArray) -> object:
+        self.resolve(expr.value)
+        self.resolve(expr.index)
         self.resolve(expr.objekt)
 
     def visit_ternary_expr(self, expr: Ternary) -> object:

@@ -1,8 +1,9 @@
+from array import LoxArray
 from instance import Instance
 from lox_callable import Callable
 from lox_class import LoxClass
 from environment import Environment
-from expr import Assign, Binary, Call, Expr, Get, Grouping, Lambda, Literal, Logical, Set, Ternary, This, Unary, Variable
+from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
 from native import Clock, Inner, NoOp
@@ -33,6 +34,9 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             self.reporter.native_error(error)
         except RuntimeException as error:
             self.reporter.runtime_error(error)
+
+    def visit_array_expr(self, expr: Array) -> object:
+        return LoxArray([self.evaluate(element) for element in expr.elements])
 
     def visit_assign_expr(self, expr: Assign) -> object:
         value = self.evaluate(expr.value)
@@ -106,6 +110,16 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             )
         return function.call(self, arguments)
 
+    def visit_index_expr(self, expr: Index) -> object:
+        objekt = self.evaluate(expr.objekt)
+        if isinstance(objekt, LoxArray):
+            index = self.evaluate(expr.index)
+            if not isinstance(index, float):
+                raise RuntimeException(expr.bracket, "Index must be a number.")
+            return objekt.get(index)
+
+        raise RuntimeException(expr.bracket, "Can only index an array.")
+
     def visit_get_expr(self, expr: Get) -> object:
         objekt = self.evaluate(expr.objekt)
         if isinstance(objekt, Instance):
@@ -152,6 +166,18 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
         value = self.evaluate(expr.value)
         objekt.set(expr.name, value)
+
+    def visit_setarray_expr(self, expr: SetArray) -> object:
+        objekt = self.evaluate(expr.objekt)
+
+        if not isinstance(objekt, LoxArray):
+            raise RuntimeException(expr.bracket, "Can only index array.")
+
+        index = self.evaluate(expr.index)
+        if not isinstance(index, float):
+            raise RuntimeException(expr.bracket, "Index must be a number.")
+        value = self.evaluate(expr.value)
+        objekt.set(index, value)
 
     def visit_ternary_expr(self, expr: Ternary) -> object:
         conditional = self.evaluate(expr.conditional)
