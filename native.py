@@ -60,6 +60,23 @@ class Inner(Callable):
         return "<native fn: inner>"
 
 
+class Length(Callable):
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        array = arguments[0]
+
+        if array.__class__.__name__ != "LoxArray":
+            raise NativeException("len: Argument must be an array.")
+
+        return len(array.elements)
+
+    def __str__(self) -> str:
+        return "<native fn: len>"
+
+
 class NoOp(Callable):
 
     def arity(self) -> int:
