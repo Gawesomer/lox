@@ -114,3 +114,9 @@ class D<B,A{}
 
 print C().name;	// A
 print D().name;	// B
+
+
+// Arrays
+var a = array(3);
+a[1+1] = 0;
+print a;
