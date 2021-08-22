@@ -47,7 +47,7 @@ class Parser:
         expression     → inv_comma ;
         inv_comma      → "," comma ;
         comma          → array ( "," array )* ;
-        array          → "[ assignment? ( "," assignment )* "]"
+        array          → "[" array? ( "," array )* "]"
                        | assignment ;
         assignment     → ( call "." )? IDENTIFIER "=" assignment
                        | inv_ternary
@@ -275,10 +275,10 @@ class Parser:
         if self.match(TokenType.LEFT_BRACKET):
             if self.match(TokenType.RIGHT_BRACKET):
                 return Array([])
-            elements = [self.assignment()]
+            elements = [self.array()]
             while not self.check(TokenType.RIGHT_BRACKET) and not self.is_at_end():
                 self.consume(TokenType.COMMA, "Expect ',' to delimit array elements.")
-                elements.append(self.assignment())
+                elements.append(self.array())
             self.consume(TokenType.RIGHT_BRACKET, "Expect ']' to complete array.")
             return Array(elements)
 
