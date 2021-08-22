@@ -6,10 +6,11 @@ from environment import Environment
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, IndexException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
-from native import Clock, Inner, NoOp
+from native import ArrayCallable, Clock, Inner, NoOp
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
+from util import stringify
 
 
 class Interpreter(Expr.Visitor, Stmt.Visitor):
@@ -22,6 +23,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.environment = self.globals
         self.locals = dict()
 
+        self.globals.initialize("array", ArrayCallable())
         self.globals.initialize("clock", Clock())
         self.globals.initialize("inner", Inner())
         self.globals.initialize("noop", NoOp())
@@ -261,7 +263,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_expression_stmt(self, stmt: Expression):
         value = self.evaluate(stmt.expression)
         if self.is_repl:
-            print(self.stringify(value))
+            print(stringify(value))
 
     def visit_function_stmt(self, stmt: Function):
         function = LoxFunction(stmt, self.environment)
@@ -276,7 +278,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
-        print(self.stringify(value))
+        print(stringify(value))
 
     def visit_return_stmt(self, stmt: Return):
         value = None
@@ -333,15 +335,3 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         if isinstance(left, float) and isinstance(right, float):
             return
         raise RuntimeException(operator, "Operands must be numbers.")
-
-    def stringify(self, obj: object) -> str:
-        if obj is None:
-            return "nil"
-
-        if isinstance(obj, float):
-            text = str(obj)
-            if text.endswith(".0"):
-                text = text[:-2]
-            return text
-
-        return str(obj)

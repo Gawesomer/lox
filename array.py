@@ -1,4 +1,5 @@
 from exception import IndexException
+from util import stringify
 
 
 class LoxArray:
@@ -19,4 +20,4 @@ class LoxArray:
         raise IndexException("Invalid array index.")
 
     def __str__(self) -> str:
-        return "[{}]".format(",".join([str(element) for element in self.elements]))
+        return "[{}]".format(",".join([stringify(element) for element in self.elements]))

@@ -1,7 +1,23 @@
+from array import LoxArray
 from instance import Instance
 from lox_callable import Callable
 from lox_class import LoxClass
 from exception import NativeException
+
+
+class ArrayCallable(Callable):
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        size = arguments[0]
+        if not isinstance(size, float):
+            raise NativeException("array: Argument must be a number.")
+        return LoxArray([None for i in range(int(size))])
+
+    def __str__(self) -> str:
+        return "<native fn: array>"
 
 
 class Clock(Callable):
