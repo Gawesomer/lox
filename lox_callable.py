@@ -1,7 +1,5 @@
 import time
 
-from exception import NativeException
-
 
 class Callable:
 
