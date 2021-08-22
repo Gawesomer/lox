@@ -5,6 +5,10 @@ class BreakUnwindStackException(Exception):
     pass
 
 
+class IndexException(Exception):
+    pass
+
+
 class NativeException(Exception):
     pass
 

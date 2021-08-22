@@ -89,7 +89,7 @@ class Lox:
         cls.had_runtime_error = True
 
     @classmethod
-    def native_error(cls, error: NativeException):
+    def exception_error(cls, error: Exception):
         print(error)
         cls.had_runtime_error = True
 

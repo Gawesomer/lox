@@ -4,7 +4,7 @@ from lox_callable import Callable
 from lox_class import LoxClass
 from environment import Environment
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
-from exception import BreakUnwindStackException, NativeException, ReturnException, RuntimeException
+from exception import BreakUnwindStackException, IndexException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
 from native import Clock, Inner, NoOp
 from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
@@ -30,8 +30,8 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         try:
             for statement in statements:
                 self.execute(statement)
-        except NativeException as error:
-            self.reporter.native_error(error)
+        except (IndexException, NativeException) as error:
+            self.reporter.exception_error(error)
         except RuntimeException as error:
             self.reporter.runtime_error(error)
 
