@@ -71,7 +71,7 @@ class Length(Callable):
         if array.__class__.__name__ != "LoxArray":
             raise NativeException("len: Argument must be an array.")
 
-        return len(array.elements)
+        return float(len(array.elements))
 
     def __str__(self) -> str:
         return "<native fn: len>"
