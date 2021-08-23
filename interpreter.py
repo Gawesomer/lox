@@ -12,7 +12,7 @@ from native import ArrayCallable, Clock, Inner, Int, Length, NoOp
 from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
-from util import stringify
+from util import clean_index, stringify
 
 
 class Interpreter(Expr.Visitor, Stmt.Visitor):
@@ -118,11 +118,14 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
 
     def visit_index_expr(self, expr: Index) -> object:
         objekt = self.evaluate(expr.objekt)
+        index = self.evaluate(expr.index)
+        if not isinstance(index, float):
+            raise RuntimeException(expr.bracket, "Index must be a number.")
+
         if isinstance(objekt, LoxArray):
-            index = self.evaluate(expr.index)
-            if not isinstance(index, float):
-                raise RuntimeException(expr.bracket, "Index must be a number.")
-            return objekt.get(index)
+            return objekt.get(clean_index(index, len(objekt.elements)))
+        elif isinstance(objekt, str):
+            return objekt[clean_index(index, len(objekt))]
 
         raise RuntimeException(expr.bracket, "Can only index an array.")
 
@@ -183,7 +186,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         if not isinstance(index, float):
             raise RuntimeException(expr.bracket, "Index must be a number.")
         value = self.evaluate(expr.value)
-        objekt.set(index, value)
+        objekt.set(clean_index(index, len(objekt.elements)), value)
 
     def visit_ternary_expr(self, expr: Ternary) -> object:
         conditional = self.evaluate(expr.conditional)

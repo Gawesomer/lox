@@ -1,4 +1,3 @@
-from exception import IndexException
 from util import stringify
 
 
@@ -7,17 +6,11 @@ class LoxArray:
     def __init__(self, elements: list[object]):
         self.elements = elements
 
-    def get(self, index: float) -> object:
-        return self.elements[self.clean_index(index)]
+    def get(self, index: int) -> object:
+        return self.elements[index]
 
-    def set(self, index: float, value: object):
-        self.elements[self.clean_index(index)] = value
-
-    def clean_index(self, index: float):
-        index = int(index)
-        if 0 <= index < len(self.elements):
-            return index
-        raise IndexException("Invalid array index.")
+    def set(self, index: int, value: object):
+        self.elements[index] = value
 
     def __str__(self) -> str:
         return "[{}]".format(",".join([stringify(element) for element in self.elements]))
