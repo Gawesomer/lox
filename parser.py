@@ -301,7 +301,7 @@ class Parser:
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
-            value = self.assignment()
+            value = self.array()
 
             if isinstance(expr, Variable):
                 name = expr.name
