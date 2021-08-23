@@ -23,6 +23,9 @@ class Stmt:
         def visit_if_stmt(self, stmt: 'If'):
             raise NotImplementedError
 
+        def visit_import_stmt(self, stmt: 'Import'):
+            raise NotImplementedError
+
         def visit_print_stmt(self, stmt: 'Print'):
             raise NotImplementedError
 
@@ -94,6 +97,14 @@ class If(Stmt):
 
     def accept(self, visitor):
         return visitor.visit_if_stmt(self)
+
+
+class Import(Stmt):
+    def __init__(self, filename: Token):
+        self.filename = filename
+
+    def accept(self, visitor):
+        return visitor.visit_import_stmt(self)
 
 
 class Print(Stmt):

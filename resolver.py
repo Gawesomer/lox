@@ -3,7 +3,7 @@ from enum import Enum, auto
 
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from interpreter import Interpreter
-from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 
 
@@ -162,6 +162,9 @@ class Resolver(Expr.Visitor, Stmt.Visitor):
         self.resolve(stmt.then_branch)
         if stmt.else_branch is not None:
             self.resolve(stmt.else_branch)
+
+    def visit_import_stmt(self, stmt: Import):
+        return None
 
     def visit_print_stmt(self, stmt: Print):
         self.resolve(stmt.expression)

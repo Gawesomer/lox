@@ -1,7 +1,7 @@
 import typing
 
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
-from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
 
@@ -32,7 +32,8 @@ class Parser:
                        | return_stmt
                        | while_stmt
                        | break_stmt
-                       | block ;
+                       | block
+                       | import_stmt ;
         expr_stmt      → expression ";" ;
         for_stmt       → "for" "(" ( var_decl | expr_stmt | ";" )
                          expression? ";"
@@ -174,6 +175,10 @@ class Parser:
             return self.break_statement()
         if self.match(TokenType.LEFT_BRACE):
             return Block(self.block())
+        if self.match(TokenType.IMPORT):
+            import_stmt = Import(self.previous())
+            self.consume(TokenType.SEMICOLON, "Expect ';' after import statement.")
+            return import_stmt
 
         return self.expression_statement()
 

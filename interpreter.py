@@ -1,3 +1,5 @@
+import os.path
+
 from array import LoxArray
 from instance import Instance
 from lox_callable import Callable
@@ -7,7 +9,7 @@ from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda
 from exception import BreakUnwindStackException, IndexException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
 from native import ArrayCallable, Clock, Inner, Int, Length, NoOp
-from stmt import Block, Break, Class, Expression, Function, If, Print, Return, Stmt, Var, While
+from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
 from util import stringify
@@ -277,6 +279,12 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
             self.execute(stmt.then_branch)
         elif stmt.else_branch is not None:
             self.execute(stmt.else_branch)
+
+    def visit_import_stmt(self, stmt: Import):
+        if not os.path.exists(stmt.filename.lexeme):
+            raise RuntimeException(stmt.filename, "Imported filename cannot be found.")
+        with open(stmt.filename.lexeme) as imported_file:
+            self.reporter.run(imported_file.read(), self)
 
     def visit_print_stmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)

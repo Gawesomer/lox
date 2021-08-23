@@ -13,6 +13,7 @@ class Scanner:
         "for": TokenType.FOR,
         "fun": TokenType.FUN,
         "if": TokenType.IF,
+        "import": TokenType.IMPORT,
         "nil": TokenType.NIL,
         "or": TokenType.OR,
         "print": TokenType.PRINT,
@@ -164,6 +165,13 @@ class Scanner:
 
         text = self.source[self.start:self.current]
         token_type = self.keywords.get(text, TokenType.IDENTIFIER)
+
+        if token_type == TokenType.IMPORT:
+            while self.peek() in (' ', '\r', '\t'):
+                self.advance()
+            self.start = self.current
+            while self.peek() != ';' and not self.is_at_end():
+                self.advance()
 
         return self.new_token(token_type)
 
