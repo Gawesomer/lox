@@ -60,6 +60,23 @@ class Inner(Callable):
         return "<native fn: inner>"
 
 
+class Int(Callable):
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        number = arguments[0]
+
+        if not isinstance(number, float):
+            raise NativeException("int: Argument must be a number.")
+
+        return float(int(number))
+
+    def __str__(self) -> str:
+        return "<native fn: int>"
+
+
 class Length(Callable):
 
     def arity(self) -> int:
