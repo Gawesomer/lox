@@ -1,3 +1,5 @@
+import os.path
+
 from array import LoxArray
 from instance import Instance
 from lox_callable import Callable
@@ -83,12 +85,12 @@ class Length(Callable):
         return 1
 
     def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
-        array = arguments[0]
+        objekt = arguments[0]
 
-        if array.__class__.__name__ != "LoxArray":
-            raise NativeException("len: Argument must be an array.")
+        if objekt.__class__.__name__ != "LoxArray" and not isinstance(objekt, str):
+            raise NativeException("len: Argument must be array or string..")
 
-        return float(len(array.elements))
+        return float(len(objekt))
 
     def __str__(self) -> str:
         return "<native fn: len>"
@@ -107,3 +109,24 @@ class NoOp(Callable):
 
     def __str__(self) -> str:
         return "<native fn: noop>"
+
+
+class ReadFile(Callable):
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        filename = arguments[0]
+
+        if not isinstance(filename, str):
+            raise NativeException("readfile: Argument must be a string.")
+
+        if not os.path.exists(filename):
+            raise NativeException("readfile: File cannot be found.")
+
+        with open(filename) as f:
+            return f.read()
+
+    def __str__(self) -> str:
+        return "<native fn: readfile>"

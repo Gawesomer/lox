@@ -8,7 +8,7 @@ from environment import Environment
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, IndexException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
-from native import ArrayCallable, Clock, Inner, Int, Length, NoOp
+from native import ArrayCallable, Clock, Inner, Int, Length, NoOp, ReadFile
 from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -31,6 +31,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.globals.initialize("int", Int())
         self.globals.initialize("len", Length())
         self.globals.initialize("noop", NoOp())
+        self.globals.initialize("readfile", ReadFile())
 
     def interpret(self, statements: list[Stmt]):
         try:
@@ -127,7 +128,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         elif isinstance(objekt, str):
             return objekt[clean_index(index, len(objekt))]
 
-        raise RuntimeException(expr.bracket, "Can only index an array.")
+        raise RuntimeException(expr.bracket, "Can only index arrays and strings.")
 
     def visit_get_expr(self, expr: Get) -> object:
         objekt = self.evaluate(expr.objekt)

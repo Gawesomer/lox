@@ -12,5 +12,8 @@ class LoxArray:
     def set(self, index: int, value: object):
         self.elements[index] = value
 
+    def __len__(self) -> int:
+        return len(self.elements)
+
     def __str__(self) -> str:
         return "[{}]".format(",".join([stringify(element) for element in self.elements]))
