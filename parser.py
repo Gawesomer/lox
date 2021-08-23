@@ -362,12 +362,14 @@ class Parser:
         return self.parse_binary("Comparison", (TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL), self.term)
 
     def term(self) -> Expr:
-        return self.parse_binary("Term", [TokenType.MINUS, TokenType.PLUS], self.factor)
+        return self.parse_binary("Term", [TokenType.MINUS, TokenType.PLUS], self.factor, [TokenType.PLUS])
 
     def factor(self) -> Expr:
         return self.parse_binary("Factor", [TokenType.SLASH, TokenType.STAR], self.unary)
 
-    def parse_binary(self, name: str, match_operators: list[TokenType], subexpr: typing.Callable) -> Expr:
+    def parse_binary(self, name: str, match_operators: list[TokenType], subexpr: typing.Callable, match_invalid: list[TokenType] = None) -> Expr:
+        if not match_invalid:
+            match_invalid = match_operators
         def parse_valid_binary():
             expression = subexpr()
 
@@ -378,7 +380,7 @@ class Parser:
 
             return expression
 
-        if self.match(*match_operators):
+        if self.match(*match_invalid):
             self.error(self.peek(), "{} operator without left-hand operand.".format(name))
             invalid_expression = parse_valid_binary()
 
