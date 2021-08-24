@@ -1,33 +1,32 @@
 class Sort {
-    class merge(arr)
+    class defaultCompare(left, right)
+    {
+        return left <= right;
+    }
+
+    class merge(arr, compare)
     {
         if (len(arr) <= 1) return;
 
         var i;
         var mid = int(len(arr)/2);
-	print "mid: " + mid;
         var left = array(mid);
-        print "left init: " + left;
         for (i = 0; i < mid; i=i+1) {
             left[i] = arr[i];
         }
-        print "left: " + left;
         var right = array(len(arr)-mid);
-        print "right init: " + right;
         for (i = mid; i < len(arr); i=i+1) {
             right[i-mid] = arr[i];
         }
-        print "right: " + right;
 
-        this.merge(left);
-        this.merge(right);
-        print "Recursed";
+        this.merge(left, compare);
+        this.merge(right, compare);
 
         i = 0;
         var leftIndex = 0;
         var rightIndex = 0;
         while (leftIndex < len(left) and rightIndex < len(right)) {
-            if (left[leftIndex] <= right[rightIndex]) {
+            if (compare(left[leftIndex], right[rightIndex])) {
                 arr[i] = left[leftIndex];
                 leftIndex = leftIndex+1;
             } else {
