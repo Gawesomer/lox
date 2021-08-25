@@ -16,7 +16,7 @@ class Instance:
         if method is not None:
             return method.bind(self)
 
-        return None
+        raise RuntimeException(name, "Property not found.")
 
     def set(self, name: Token, value: object):
         self.fields[name.lexeme] = value

@@ -133,9 +133,13 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
     def visit_get_expr(self, expr: Get) -> object:
         objekt = self.evaluate(expr.objekt)
         if isinstance(objekt, Instance):
-            res = objekt.get(expr.name)
+            try:
+                res = objekt.get(expr.name)
+            except RuntimeException:
+                raise RuntimeException(expr.name, "Undefined property '{}'.".format(expr.name.lexeme))
             if isinstance(res, LoxFunction) and res.is_getter:
                 res = res.call(self, ())
+            return res
         elif isinstance(objekt, LoxClass):
             res = objekt.find_class_method(expr.name.lexeme, recurse=True)
         else:
