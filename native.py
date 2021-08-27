@@ -22,6 +22,23 @@ class ArrayCallable(Callable):
         return "<native fn: array>"
 
 
+class Char(Callable):
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        number = arguments[0]
+
+        if isinstance(number, float):
+            return chr(int(number))
+
+        raise NativeException("chr: Argument must be a number.")
+
+    def __str__(self) -> str:
+        return "<native fn: chr>"
+
+
 class Clock(Callable):
 
     def arity(self) -> int:
@@ -90,7 +107,7 @@ class Length(Callable):
         objekt = arguments[0]
 
         if objekt.__class__.__name__ != "LoxArray" and not isinstance(objekt, str):
-            raise NativeException("len: Argument must be array or string..")
+            raise NativeException("len: Argument must be array or string.")
 
         return float(len(objekt))
 

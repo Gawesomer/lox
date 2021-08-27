@@ -8,7 +8,7 @@ from environment import Environment
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, IndexException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
-from native import ArrayCallable, Clock, Inner, Int, Length, NoOp, ReadFile, WriteFile
+from native import ArrayCallable, Char, Clock, Inner, Int, Length, NoOp, ReadFile, WriteFile
 from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -26,6 +26,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.locals = dict()
 
         self.globals.initialize("array", ArrayCallable())
+        self.globals.initialize("chr", Char())
         self.globals.initialize("clock", Clock())
         self.globals.initialize("inner", Inner())
         self.globals.initialize("int", Int())
