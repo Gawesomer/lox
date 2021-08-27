@@ -1,0 +1,8 @@
+class BinaryTree {
+    init(payload, left, right)
+    {
+        this.payload = payload;
+        this.left = left;
+        this.right = right;
+    }
+}

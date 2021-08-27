@@ -1,0 +1,64 @@
+import math.lox;
+
+class BitMagic {
+
+    class bitstringToText(bitstring)
+    {
+        var res = "";
+        var buffer = "";
+        for (var i = 0; i < len(bitstring); i=i+1) {
+            buffer = buffer+bitstring[i];
+            if (len(buffer) == 8) {
+                res = res+chr(this.fromBitString(buffer));
+                buffer = "";
+            }
+        }
+        return res;
+    }
+
+    /* Returns the minimum number of bits to represent the given non-negative number. */
+    class numBits(number)
+    {
+        var res = 0;
+        while (number > 0) {
+            res = res+1;
+            number = int(number/2);
+        }
+        return res;
+    }
+
+    /* Prefix bitString with 0s to fill to width. */
+    class padBitString(bitString, width)
+    {
+        var prefix = "";
+        for (var i = 0; i < width-len(bitString); i=i+1) {
+            prefix = prefix+"0";
+        }
+        return prefix+bitString;
+    }
+
+    /* Returns number represented by the given bit string */
+    class fromBitString(bitstring)
+    {
+        var res = 0;
+        for (var i = 0; i < len(bitstring); i=i+1) {
+            if (bitstring[len(bitstring)-1-i] == "1") {
+                res = res + Math.pow(2, i);
+            }
+        }
+        return res;
+    }
+
+    /* Returns a string of 1s and 0s of the binary representation of the given non-negative number. */
+    class toBitString(number)
+    {
+        if (number == 0) return "0";
+        var res = "";
+        while (number > 0) {
+            if (Math.mod(number, 2) == 0) res = "0"+res;
+            else res = "1"+res;
+            number = int(number/2);
+        }
+        return res;
+    }
+}
