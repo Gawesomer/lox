@@ -70,10 +70,12 @@ class Int(Callable):
     def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
         number = arguments[0]
 
-        if not isinstance(number, float):
-            raise NativeException("int: Argument must be a number.")
+        if isinstance(number, float):
+            return float(int(number))
+        elif isinstance(number, str) and len(number) == 1:
+            return float(ord(number))
 
-        return float(int(number))
+        raise NativeException("int: Argument must be a number or character.")
 
     def __str__(self) -> str:
         return "<native fn: int>"
@@ -125,8 +127,31 @@ class ReadFile(Callable):
         if not os.path.exists(filename):
             raise NativeException("readfile: File cannot be found.")
 
-        with open(filename) as f:
+        with open(filename, encoding="latin-1") as f:
             return f.read()
 
     def __str__(self) -> str:
         return "<native fn: readfile>"
+
+
+class WriteFile(Callable):
+
+    def arity(self) -> int:
+        return 2
+
+    def call(self, interpreter: "Interpreter", arguments: list[object]) -> object:
+        filename, text = arguments
+
+        if not isinstance(filename, str):
+            raise NativeException("writefile: First argument must be a string.")
+        if not isinstance(text, str):
+            raise NativeException("writefile: Second argument must be a string.")
+
+        try:
+            with open(filename, "w", encoding="latin-1") as f:
+                f.write(text)
+        except UnicodeEncodeError:
+            raise NativeException("writefile: Invalid character set. Can only handle ASCII.")
+
+    def __str__(self) -> str:
+        return "<native fn: writefile>"

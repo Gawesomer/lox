@@ -8,7 +8,7 @@ from environment import Environment
 from expr import Array, Assign, Binary, Call, Expr, Index, Get, Grouping, Lambda, Literal, Logical, Set, SetArray, Ternary, This, Unary, Variable
 from exception import BreakUnwindStackException, IndexException, NativeException, ReturnException, RuntimeException
 from function import LoxFunction
-from native import ArrayCallable, Clock, Inner, Int, Length, NoOp, ReadFile
+from native import ArrayCallable, Clock, Inner, Int, Length, NoOp, ReadFile, WriteFile
 from stmt import Block, Break, Class, Expression, Function, If, Import, Print, Return, Stmt, Var, While
 from lox_token import Token
 from token_type import TokenType
@@ -32,6 +32,7 @@ class Interpreter(Expr.Visitor, Stmt.Visitor):
         self.globals.initialize("len", Length())
         self.globals.initialize("noop", NoOp())
         self.globals.initialize("readfile", ReadFile())
+        self.globals.initialize("writefile", WriteFile())
 
     def interpret(self, statements: list[Stmt]):
         try:
