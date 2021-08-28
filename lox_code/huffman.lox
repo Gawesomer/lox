@@ -7,10 +7,16 @@ import tree.lox;
  * Sloppy implementation of Huffman encoding in Lox.
  *
  * Instructions:
- *   Create a file called "test" in this directory.
  *   Have lox interpret this file.
- *   It will encode the contents of "test" into a file named "encoded"
+ *   It will encode the contents of "interpreter.py" into a file named "encoded"
  *   and decode the encoding.
+ *   (Pour yourself a cup of coffe, cause it will take a while)
+ *
+ * Result:
+ *   $ wc -c ../interpreter.py
+ *      13807 ../interpreter.py
+ *   $ wc -c encoded
+ *       7859 encoded
  *
  * Notes about using the language:
  *   Would have loved to have some kind of hashing available from Lox.
@@ -189,7 +195,7 @@ class HuffmanDecoder {
     }
 }
 
-var text = readfile("text");
+var text = readfile("../interpreter.py");
 var encoded = HuffmanEncoder(text).encode();
 writefile("encoded", BitMagic.bitstringToText(encoded));
 var encodedBitString = "";
