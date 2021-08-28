@@ -3,24 +3,44 @@ import bits.lox;
 import math.lox;
 import tree.lox;
 
+/*
+ * Sloppy implementation of Huffman encoding in Lox.
+ *
+ * Instructions:
+ *   Create a file called "test" in this directory.
+ *   Have lox interpret this file.
+ *   It will encode the contents of "test" into a file named "encoded"
+ *   and decode the encoding.
+ *
+ * Notes about using the language:
+ *   Would have loved to have some kind of hashing available from Lox.
+ *   Using floats instead of integers is terrifying.
+ *   Bitwise arithmetic would be nice to have. Dealing with strings of
+ *   1s and 0s works but is just really gross.
+ */
 class HuffmanEncoder {
 
+    init(text)
+    {
+        this.text = text;
+    }
+
     /* Build Huffman tree for given text. */
-    class buildTree(text)
+    class buildTree()
     {
         var i;
-        var freqList = array(Array.countDistinct(text));  // array(BinaryTree([char, freq]))
+        var freqList = array(Array.countDistinct(this.text));  // array(BinaryTree([char, freq]))
         var firstFree = 0;
-        for (i = 0; i < len(text); i=i+1) {
+        for (i = 0; i < len(this.text); i=i+1) {    // Would love a hashmap or a set right about now
             var wasSeen = false;
             for (var j = 0; j < firstFree; j=j+1) {
-                if (text[i] == freqList[j].payload[0]) {
+                if (this.text[i] == freqList[j].payload[0]) {
                     freqList[j].payload[1] = freqList[j].payload[1]+1;
                     wasSeen = true;
                 }
             }
             if (!wasSeen) {
-                freqList[firstFree] = BinaryTree([text[i], 1], nil, nil);
+                freqList[firstFree] = BinaryTree([this.text[i], 1], nil, nil);
                 firstFree = firstFree+1;
             }
         }
@@ -67,12 +87,18 @@ class HuffmanEncoder {
         
     }
 
-    /* Returns the maximum number of bits necessary to represent every character in the text */
-    class maxCharWidth(text)
+    /* Returns the maximum number of bits necessary to represent every character in the text.
+     * Note:
+     * Not ideal to reiterate through the entire text especially considering that we will be encoding
+     * every character right away and could compute the max of their lengths.
+     * Considering how slow this implementation is, might as well throw another iteration for the
+     * sake of readability.
+     */
+    class maxCharWidth()
     {
         var max = 0;
-        for (var i = 0; i < len(text); i=i+1) {
-            var curr = BitMagic.numBits(int(text[i]));
+        for (var i = 0; i < len(this.text); i=i+1) {
+            var curr = BitMagic.numBits(int(this.text[i]));
             if (max < curr) max = curr;
         }
         return max;
@@ -81,15 +107,18 @@ class HuffmanEncoder {
     /* Returns bit string representing the Huffman encoding of the given text.
      * Format:
      *     charWidth (8-bits) - encodedHuffmanTree (full) - encodedText - 1 - 0* (to pad to byte size)
+     * Note:
+     * It will be necessary for the decoder to know the character width when decoding the tree, hence charWidth.
+     * I could have simply assumed it to be 8 considering that I have only implemented Lox I/O to handle extended ASCII.
      */
-    class encode(text)
+    class encode()
     {
-        var huffmanTree = this.buildTree(text);
-        var charWidth = this.maxCharWidth(text);
+        var huffmanTree = this.buildTree();
+        var charWidth = this.maxCharWidth();
         var encodedBitString = BitMagic.padBitString(BitMagic.toBitString(charWidth), 8);
         encodedBitString = encodedBitString + this.encodeTree(huffmanTree, charWidth);
-        for (var i = 0; i < len(text); i=i+1) {
-            encodedBitString = encodedBitString + this.encodeCharacter(huffmanTree, text[i], "");
+        for (var i = 0; i < len(this.text); i=i+1) {
+            encodedBitString = encodedBitString + this.encodeCharacter(huffmanTree, this.text[i], "");
         }
         encodedBitString = encodedBitString+"1";
         while (Math.mod(len(encodedBitString), 8) != 0) encodedBitString = encodedBitString+"0";
@@ -105,6 +134,10 @@ class HuffmanDecoder {
         this.currentBit = 0;
     }
 
+    /* Build Huffman tree encoded in bitstring starting a currentBit
+     * Note:
+     * Completes once the tree is filled.
+     */
     buildTree(charWidth, tree)
     {
         this.currentBit = this.currentBit+1;
@@ -123,6 +156,7 @@ class HuffmanDecoder {
         this.buildTree(charWidth, tree.right);
     }
 
+    /* Returns decoded character encoded in bitstring at currentBit using the given Huffman tree */
     decodeCharacter(tree)
     {
         if (tree.payload != nil) return tree.payload;
@@ -131,6 +165,7 @@ class HuffmanDecoder {
         return this.decodeCharacter(tree.right);
     }
 
+    /* Returns decoded string of given Huffman encoded bitstring */
     decode()
     {
         var charWidth = "";
@@ -155,7 +190,7 @@ class HuffmanDecoder {
 }
 
 var text = readfile("text");
-var encoded = HuffmanEncoder.encode(text);
+var encoded = HuffmanEncoder(text).encode();
 writefile("encoded", BitMagic.bitstringToText(encoded));
 var encodedBitString = "";
 var encoded = readfile("encoded");
@@ -164,6 +199,7 @@ for (var i = 0; i < len(encoded); i=i+1) {
 }
 print HuffmanDecoder(encodedBitString).decode();
 /*
+Example Huffman tree:
 "Hello World!"
             12
         /       \
