@@ -18,7 +18,7 @@ class Lox:
     @classmethod
     def main(cls):
         if len(sys.argv) > 2:
-            print("Usage: jlox [script]")
+            print("Usage: pylox [script]")
             exit(1)
         elif len(sys.argv) == 2:
             cls.run_file(sys.argv[1])
