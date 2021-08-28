@@ -2,31 +2,11 @@ import array.lox;
 import bits.lox;
 import math.lox;
 import tree.lox;
-import sort.lox;
 
-class Huffman {
-
-    class buildTreeFromBitString(bitstring, charWidth, i, tree)
-    {
-        if (bitstring[i] == "1") {
-            i = i+1;
-            var char = "";
-            for (var j = 0; j < charWidth; j=j+1, i=i+1) {
-                char = char+bitstring[i];
-            }
-            char = chr(BitMagic.fromBitString(char));
-            tree.payload = char;
-            return i;
-        }
-        tree.left = BinaryTree(nil, nil, nil);
-        tree.right = BinaryTree(nil, nil, nil);
-        i = this.buildTreeFromBitString(bitstring, charWidth, i+1, tree.left);
-        i = this.buildTreeFromBitString(bitstring, charWidth, i, tree.right);
-        return i;
-    }
+class HuffmanEncoder {
 
     /* Build Huffman tree for given text. */
-    class buildTreeFromText(text)
+    class buildTree(text)
     {
         var i;
         var freqList = array(Array.countDistinct(text));  // array(BinaryTree([char, freq]))
@@ -61,15 +41,8 @@ class Huffman {
         return freqList[smalls[0]];
     }
 
-    class decodeCharacter(tree, bitstring, i)
-    {
-        if (tree.payload != nil) return [tree.payload, i];
-        if (bitstring[i] == "0") return this.decodeCharacter(tree.left, bitstring, i+1);
-        return this.decodeCharacter(tree.right, bitstring, i+1);
-    }
-
     /* Return binary encoding represented as string of 1s and 0s of the given character.
-     * tree BinaryTree: Generated from Huffman.buildTreeFromText
+     * tree BinaryTree: Generated from Huffman.buildTree
      * char: Character to look for
      * encoding: Recursive parameter. Should be "" */
     class encodeCharacter(tree, char, encoding)
@@ -111,7 +84,7 @@ class Huffman {
      */
     class encode(text)
     {
-        var huffmanTree = this.buildTreeFromText(text);
+        var huffmanTree = this.buildTree(text);
         var charWidth = this.maxCharWidth(text);
         var encodedBitString = BitMagic.padBitString(BitMagic.toBitString(charWidth), 8);
         encodedBitString = encodedBitString + this.encodeTree(huffmanTree, charWidth);
@@ -122,42 +95,76 @@ class Huffman {
         while (Math.mod(len(encodedBitString), 8) != 0) encodedBitString = encodedBitString+"0";
         return encodedBitString;
     }
+}
 
-    class decode(bitstring)
+class HuffmanDecoder {
+
+    init(bitstring)
     {
-        var i;
+        this.bitstring = bitstring;
+        this.currentBit = 0;
+    }
+
+    buildTree(charWidth, tree)
+    {
+        this.currentBit = this.currentBit+1;
+        if (this.bitstring[this.currentBit-1] == "1") {
+            var char = "";
+            for (var j = 0; j < charWidth; j=j+1, this.currentBit=this.currentBit+1) {
+                char = char+this.bitstring[this.currentBit];
+            }
+            char = chr(BitMagic.fromBitString(char));
+            tree.payload = char;
+            return;
+        }
+        tree.left = BinaryTree(nil, nil, nil);
+        tree.right = BinaryTree(nil, nil, nil);
+        this.buildTree(charWidth, tree.left);
+        this.buildTree(charWidth, tree.right);
+    }
+
+    decodeCharacter(tree)
+    {
+        if (tree.payload != nil) return tree.payload;
+        this.currentBit = this.currentBit+1;
+        if (this.bitstring[this.currentBit-1] == "0") return this.decodeCharacter(tree.left);
+        return this.decodeCharacter(tree.right);
+    }
+
+    decode()
+    {
         var charWidth = "";
-        for (i = 0; i < 8; i=i+1) {
-            charWidth = charWidth+bitstring[i];
+        for (this.currentBit = 0; this.currentBit < 8; this.currentBit=this.currentBit+1) {
+            charWidth = charWidth+this.bitstring[this.currentBit];
         }
         charWidth = BitMagic.fromBitString(charWidth);
 
         var huffmanTree = BinaryTree(nil, nil, nil);
-        i = this.buildTreeFromBitString(bitstring, charWidth, i, huffmanTree);
+        this.buildTree(charWidth, huffmanTree);
 
-        var lastBit = len(bitstring)-1;
-        while (bitstring[lastBit] != "1") lastBit = lastBit-1;
+        var lastBit = len(this.bitstring)-1;
+        while (this.bitstring[lastBit] != "1") lastBit = lastBit-1;
 
         var decodedStr = "";
-        while (i < lastBit) {
-            var res = this.decodeCharacter(huffmanTree, bitstring, i);
-            i = res[1];
-            decodedStr = decodedStr+res[0];
+        while (this.currentBit < lastBit) {
+            var res = this.decodeCharacter(huffmanTree);
+            decodedStr = decodedStr+res;
         }
         return decodedStr;
     }
 }
 
 var text = readfile("text");
-var encoded = Huffman.encode(text);
+var encoded = HuffmanEncoder.encode(text);
 writefile("encoded", BitMagic.bitstringToText(encoded));
 var encodedBitString = "";
 var encoded = readfile("encoded");
 for (var i = 0; i < len(encoded); i=i+1) {
     encodedBitString = encodedBitString + BitMagic.padBitString(BitMagic.toBitString(int(encoded[i])), 8);
 }
-print Huffman.decode(encodedBitString);
+print HuffmanDecoder(encodedBitString).decode();
 /*
+"Hello World!"
             12
         /       \
        5          7
