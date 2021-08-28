@@ -1,6 +1,3 @@
-import time
-
-
 class Callable:
 
     def arity(self) -> int:

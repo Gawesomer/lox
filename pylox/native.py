@@ -1,4 +1,5 @@
 import os.path
+import time
 
 from array import LoxArray
 from instance import Instance
