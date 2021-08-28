@@ -1,6 +1,1 @@
 Reference: https://craftinginterpreters.com/
-
-Running example code:
-  $ cd lox_code
-  $ python3 ../lox.py huffman.lox
-  $ python3 ../lox.py challenges.lox
