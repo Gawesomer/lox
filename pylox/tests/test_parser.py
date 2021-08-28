@@ -30,16 +30,6 @@ def test_expression_parse_literal(source: str, expected_expr_value: object):
     assert expected_expr_value == actual_expr.value
 
 
-def test_expression_parse_super():
-    source = "super.method"
-
-    parser = Parser(Mock(), scan_tokens(source))
-    actual_expr = parser.expression()
-
-    assert isinstance(actual_expr, Super)
-    assert TokenType.IDENTIFIER == actual_expr.method.type
-    assert "method" == actual_expr.method.lexeme
-
 
 def test_expression_parse_this():
     source = "this"
@@ -106,7 +96,7 @@ def test_expression_parse_basic_get():
 
 
 def test_expression_parse_get_call_chain():
-    source = "super.parents().method(arg)().property"
+    source = "object.parents().method(arg)().property"
 
     parser = Parser(Mock(), scan_tokens(source))
     actual_expr = parser.expression()
@@ -116,7 +106,7 @@ def test_expression_parse_get_call_chain():
     assert isinstance(actual_expr.objekt.callee, Call)
     assert isinstance(actual_expr.objekt.callee.callee, Get)
     assert isinstance(actual_expr.objekt.callee.callee.objekt, Call)
-    assert isinstance(actual_expr.objekt.callee.callee.objekt.callee, Super)
+    assert isinstance(actual_expr.objekt.callee.callee.objekt.callee, Get)
 
 
 def test_expression_parse_single_unary():
@@ -280,8 +270,6 @@ def test_expression_parse_nested_assignments():
 
 @pytest.mark.parametrize("source, expected_error", [
     ("", "Expect expression."),
-    ("super", "Expect '.' after 'super'."),
-    ("super.", "Expect superclass method name."),
     ("(1", "Expect ')' after expression."),
     ("object.", "Expect property name after '.'."),
     ("f(arg", "Expect ')' after arguments."),
@@ -528,7 +516,7 @@ def test_declaration_parse_basic_class_declaration():
     actual_stmt = parser.declaration()
 
     assert isinstance(actual_stmt, Class)
-    assert actual_stmt.superclass is None
+    assert actual_stmt.superclasses == []
     assert 0 == len(actual_stmt.class_methods)
     assert 0 == len(actual_stmt.instance_methods)
     assert 0 == len(actual_stmt.getters)
@@ -541,7 +529,7 @@ def test_declaration_parse_class_declaration():
     actual_stmt = parser.declaration()
 
     assert isinstance(actual_stmt, Class)
-    assert isinstance(actual_stmt.superclass, Variable)
+    assert isinstance(actual_stmt.superclasses[0], Variable)
     assert 1 == len(actual_stmt.class_methods)
     assert 1 == len(actual_stmt.instance_methods)
     assert 1 == len(actual_stmt.getters)
