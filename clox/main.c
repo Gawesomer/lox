@@ -5,6 +5,7 @@
 int main(int argc, const char *argv[])
 {
 	struct Chunk chunk;
+
 	init_chunk(&chunk);
 	write_chunk(&chunk, OP_RETURN);
 
