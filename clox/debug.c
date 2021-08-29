@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "line.h"
 #include "value.h"
 
 void disassemble_chunk(struct Chunk *chunk, const char *name)
@@ -29,11 +30,14 @@ static int simple_instruction(const char *name, int offset)
 
 int disassemble_instruction(struct Chunk *chunk, int offset)
 {
+	int line_num = get_line(&chunk->lines, offset);
+
 	printf("%04d ", offset);
-	if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1])
+
+	if (offset > 0 && line_num == get_line(&chunk->lines, offset - 1))
 		printf("   | ");
 	else
-		printf("%4d ", chunk->lines[offset]);
+		printf("%4d ", line_num);
 
 	uint8_t instruction = chunk->code[offset];
 

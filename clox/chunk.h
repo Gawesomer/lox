@@ -2,6 +2,7 @@
 #define clox_chunk_h
 
 #include "common.h"
+#include "line.h"
 #include "value.h"
 
 enum OpCode {
@@ -13,7 +14,7 @@ struct Chunk {
 	int count;
 	int capacity;
 	uint8_t *code;
-	int *lines;
+	struct LineArray lines;
 	struct ValueArray constants;
 };
 

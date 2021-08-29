@@ -8,14 +8,14 @@ void init_chunk(struct Chunk *chunk)
 	chunk->count = 0;
 	chunk->capacity = 0;
 	chunk->code = NULL;
-	chunk->lines = NULL;
+	init_line_array(&chunk->lines);
 	init_value_array(&chunk->constants);
 }
 
 void free_chunk(struct Chunk *chunk)
 {
 	FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
-	FREE_ARRAY(int, chunk->lines, chunk->capacity);
+	free_line_array(&chunk->lines);
 	free_value_array(&chunk->constants);
 	init_chunk(chunk);
 }
@@ -27,11 +27,10 @@ void write_chunk(struct Chunk *chunk, uint8_t byte, int line)
 
 		chunk->capacity = GROW_CAPACITY(old_capacity);
 		chunk->code = GROW_ARRAY(uint8_t, chunk->code, old_capacity, chunk->capacity);
-		chunk->lines = GROW_ARRAY(int, chunk->lines, old_capacity, chunk->capacity);
 	}
 
 	chunk->code[chunk->count] = byte;
-	chunk->lines[chunk->count] = line;
+	write_line_array(&chunk->lines, line);
 	chunk->count++;
 }
 
