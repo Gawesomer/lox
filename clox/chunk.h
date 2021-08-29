@@ -13,12 +13,13 @@ struct Chunk {
 	int count;
 	int capacity;
 	uint8_t *code;
+	int *lines;
 	struct ValueArray constants;
 };
 
 void init_chunk(struct Chunk *chunk);
 void free_chunk(struct Chunk *chunk);
-void write_chunk(struct Chunk *chunk, uint8_t byte);
+void write_chunk(struct Chunk *chunk, uint8_t byte, int line);
 int add_constant(struct Chunk *chunk, Value value);
 
 #endif
