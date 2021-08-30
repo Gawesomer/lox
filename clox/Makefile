@@ -11,4 +11,4 @@ all: main
 main: main.o chunk.o debug.o line.o memory.o value.o
 
 clean:
-	rm -f *.o *.a main
+	rm -f *.o *.a *.~ main
