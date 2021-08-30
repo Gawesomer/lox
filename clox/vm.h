@@ -14,8 +14,8 @@ enum InterpretResult {
 	INTERPRET_RUNTIME_ERROR,
 };
 
-void init_vm();
-void free_vm();
+void init_vm(void);
+void free_vm(void);
 enum InterpretResult interpret(struct Chunk *chunk);
 
 #endif

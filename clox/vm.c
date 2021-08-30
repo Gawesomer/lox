@@ -6,17 +6,17 @@
 
 struct VM vm;
 
-void init_vm()
+void init_vm(void)
 {
 
 }
 
-void free_vm()
+void free_vm(void)
 {
 
 }
 
-static Value READ_CONSTANT_LONG()
+static Value READ_CONSTANT_LONG(void)
 {
 	uint32_t constant = 0;
 
@@ -28,7 +28,7 @@ static Value READ_CONSTANT_LONG()
 	return constant;
 }
 
-static enum InterpretResult run()
+static enum InterpretResult run(void)
 {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
