@@ -39,3 +39,25 @@ int add_constant(struct Chunk *chunk, Value value)
 	write_value_array(&chunk->constants, value);
 	return chunk->constants.count - 1;
 }
+
+int write_constant(struct Chunk *chunk, Value value, int line)
+{
+	int constant = add_constant(chunk, value);
+
+	if (constant < 256) {
+		write_chunk(chunk, OP_CONSTANT, line);
+		write_chunk(chunk, constant, line);
+	} else {
+		int constant_copy = constant;
+		uint8_t constant_arr[3];
+
+		for (int i = 2; i >= 0; i--) {
+			constant_arr[i] = constant_copy;
+			constant_copy >>= 8;
+		}
+		write_chunk(chunk, OP_CONSTANT_LONG, line);
+		for (int i = 0; i < 3; i++)
+			write_chunk(chunk, constant_arr[i], line);
+	}
+	return constant;
+}

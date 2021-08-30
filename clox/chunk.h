@@ -7,6 +7,7 @@
 
 enum OpCode {
 	OP_CONSTANT,
+	OP_CONSTANT_LONG,
 	OP_RETURN,
 };
 
@@ -22,5 +23,6 @@ void init_chunk(struct Chunk *chunk);
 void free_chunk(struct Chunk *chunk);
 void write_chunk(struct Chunk *chunk, uint8_t byte, int line);
 int add_constant(struct Chunk *chunk, Value value);
+int write_constant(struct Chunk *chunk, Value value, int line);
 
 #endif
