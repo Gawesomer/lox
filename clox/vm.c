@@ -24,7 +24,7 @@ void init_vm(void)
 
 void free_vm(void)
 {
-
+	free(vm.stack);
 }
 
 void push(Value value)
