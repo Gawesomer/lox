@@ -19,6 +19,11 @@ void init_scanner(const char *source)
 	scanner.line = 1;
 }
 
+static bool is_digit(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
 static bool is_at_end(void)
 {
 	return *scanner.current == '\0';
@@ -116,6 +121,39 @@ static struct Token skip_whitespace(void)
 	}
 }
 
+static struct Token number(void)
+{
+	while (is_digit(peek()))
+		advance();
+
+	// Look for a fractional part.
+	if (peek() == '.' && is_digit(peek_next())) {
+		// Consume the ".".
+		advance();
+
+		while (is_digit(peek()))
+			advance();
+	}
+
+	return make_token(TOKEN_NUMBER);
+}
+
+static struct Token string(void)
+{
+	while (peek() != '"' && !is_at_end()) {
+		if (peek() == '\n')
+			scanner.line++;
+		advance();
+	}
+
+	if (is_at_end())
+		return error_token("Unterminated string.");
+
+	// The closing quote.
+	advance();
+	return make_token(TOKEN_STRING);
+}
+
 struct Token scan_token(void)
 {
 	struct Token whitespace = skip_whitespace();
@@ -129,6 +167,9 @@ struct Token scan_token(void)
 		return make_token(TOKEN_EOF);
 
 	char c = advance();
+
+	if (is_digit(c))
+		return number();
 
 	switch (c) {
 	case '(':
@@ -161,6 +202,8 @@ struct Token scan_token(void)
 		return make_token(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
 	case '>':
 		return make_token(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
+	case '"':
+		return string();
 	}
 
 	return error_token("Unexpected character.");
