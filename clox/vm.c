@@ -6,14 +6,31 @@
 
 struct VM vm;
 
+static void reset_stack(void)
+{
+	vm.stack_top = vm.stack;
+}
+
 void init_vm(void)
 {
-
+	reset_stack();
 }
 
 void free_vm(void)
 {
 
+}
+
+void push(Value value)
+{
+	*vm.stack_top = value;
+	vm.stack_top++;
+}
+
+Value pop(void)
+{
+	vm.stack_top--;
+	return *vm.stack_top;
 }
 
 static Value READ_CONSTANT_LONG(void)
