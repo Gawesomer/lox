@@ -1,13 +1,19 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "debug.h"
+#include "memory.h"
 #include "vm.h"
 
 struct VM vm;
 
 static void reset_stack(void)
 {
+	vm.stack_capacity = STACK_MIN;
+	vm.stack = realloc(vm.stack, sizeof(Value) * vm.stack_capacity);
+	if (vm.stack == NULL)
+		exit(1);
 	vm.stack_top = vm.stack;
 }
 
@@ -23,6 +29,15 @@ void free_vm(void)
 
 void push(Value value)
 {
+	if (vm.stack_capacity <= (int)(vm.stack_top - vm.stack)) {
+		int old_capacity = vm.stack_capacity;
+		int top_offset = (int)(vm.stack_top - vm.stack);
+
+		vm.stack_capacity = GROW_CAPACITY(old_capacity);
+		vm.stack = GROW_ARRAY(Value, vm.stack, old_capacity, vm.stack_capacity);
+		vm.stack_top = vm.stack + top_offset;
+	}
+
 	*vm.stack_top = value;
 	vm.stack_top++;
 }

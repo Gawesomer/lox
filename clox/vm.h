@@ -4,13 +4,14 @@
 #include "chunk.h"
 #include "value.h"
 
-#define STACK_MAX 256
+#define STACK_MIN 256
 
 struct VM {
 	struct Chunk *chunk;
 	uint8_t *ip;
-	Value stack[STACK_MAX];
+	Value *stack;
 	Value *stack_top;
+	int stack_capacity;
 };
 
 enum InterpretResult {
