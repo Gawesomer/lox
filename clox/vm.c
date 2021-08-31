@@ -52,6 +52,13 @@ static enum InterpretResult run(void)
 
 	for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
+		printf("          ");
+		for (Value *slot = vm.stack; slot < vm.stack_top; slot++) {
+			printf("[ ");
+			print_value(*slot);
+			printf(" ]");
+		}
+		printf("\n");
 		disassemble_instruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
 #endif
 		uint8_t instruction;
@@ -60,15 +67,15 @@ static enum InterpretResult run(void)
 		switch (instruction = READ_BYTE()) {
 		case OP_CONSTANT:
 			constant = READ_CONSTANT();
-			print_value(constant);
-			printf("\n");
+			push(constant);
 			break;
 		case OP_CONSTANT_LONG:
 			constant = READ_CONSTANT_LONG();
-			print_value(constant);
-			printf("\n");
+			push(constant);
 			break;
 		case OP_RETURN:
+			print_value(pop());
+			printf("\n");
 			return INTERPRET_OK;
 		}
 	}
