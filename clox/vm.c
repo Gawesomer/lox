@@ -73,6 +73,9 @@ static enum InterpretResult run(void)
 			constant = READ_CONSTANT_LONG();
 			push(constant);
 			break;
+		case OP_NEGATE:
+			push(-pop());
+			break;
 		case OP_RETURN:
 			print_value(pop());
 			printf("\n");
