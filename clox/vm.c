@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "compiler.h"
 #include "debug.h"
 #include "memory.h"
 #include "vm.h"
@@ -121,9 +122,8 @@ static enum InterpretResult run(void)
 #undef BINARY_OP
 }
 
-enum InterpretResult interpret(struct Chunk *chunk)
+enum InterpretResult interpret(const char *source)
 {
-	vm.chunk = chunk;
-	vm.ip = vm.chunk->code;
-	return run();
+	compile(source);
+	return INTERPRET_OK;
 }

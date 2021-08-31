@@ -22,7 +22,7 @@ enum InterpretResult {
 
 void init_vm(void);
 void free_vm(void);
-enum InterpretResult interpret(struct Chunk *chunk);
+enum InterpretResult interpret(const char *source);
 void push(Value value);
 Value pop(void);
 
