@@ -30,6 +30,18 @@ static char advance(void)
 	return scanner.current[-1];
 }
 
+static char peek(void)
+{
+	return *scanner.current;
+}
+
+static char peek_next(void)
+{
+	if (is_at_end())
+		return '\0';
+	return scanner.current[1];
+}
+
 static bool match(char expected)
 {
 	if (is_at_end())
@@ -62,8 +74,55 @@ static struct Token error_token(const char *message)
 	return token;
 }
 
+static struct Token skip_whitespace(void)
+{
+	for (;;) {
+		char c = peek();
+
+		switch (c) {
+		case ' ':
+		case '\r':
+		case '\t':
+			advance();
+			break;
+		case '\n':
+			scanner.line++;
+			advance();
+			break;
+		case '/':
+			if (peek_next() == '/') {
+				// A comment goes until the end of the line.
+				while (peek() != '\n' && !is_at_end())
+					advance();
+			} else if (peek_next() == '*') {
+				// Block comment
+				while (!(peek() == '*' && peek_next() == '/') && !is_at_end()) {
+					if (peek() == '\n')
+						scanner.line++;
+					advance();
+				}
+
+				if (is_at_end())
+					return error_token("Unterminated block comment.");
+
+				// Conume the "*/".
+				advance();
+				advance();
+			}
+			break;
+		default:
+			return make_token(TOKEN_WHITESPACE);
+		}
+	}
+}
+
 struct Token scan_token(void)
 {
+	struct Token whitespace = skip_whitespace();
+
+	if (whitespace.type == TOKEN_ERROR)
+		return whitespace;
+
 	scanner.start = scanner.current;
 
 	if (is_at_end())
