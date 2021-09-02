@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,6 +17,21 @@ static void reset_stack(void)
 	if (vm.stack == NULL)
 		exit(1);
 	vm.stack_top = vm.stack;
+}
+
+static void runtime_error(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+	fputs("\n", stderr);
+
+	size_t instruction = vm.ip - vm.chunk->code - 1;
+	int line = get_line(&vm.chunk->lines, instruction);
+
+	fprintf(stderr, "[line %d] in script\n", line);
+	reset_stack();
 }
 
 void init_vm(void)
@@ -49,27 +65,36 @@ Value pop(void)
 	return *vm.stack_top;
 }
 
+static Value peek(int distance)
+{
+	return vm.stack_top[-1 - distance];
+}
+
 static Value READ_CONSTANT_LONG(void)
 {
-	uint32_t constant = 0;
+	uint32_t offset = 0;
 
 	for (int i = 0; i < 3; i++) {
-		constant <<= 8;
-		constant += *vm.ip++;  // READ_BYTE()
+		offset <<= 8;
+		offset += *vm.ip++;  // READ_BYTE()
 	}
 
-	return constant;
+	return vm.chunk->constants.values[offset];
 }
 
 static enum InterpretResult run(void)
 {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-#define BINARY_OP(op) \
+#define BINARY_OP(value_type,  op) \
 	do { \
-		double b = pop(); \
-		double a = pop(); \
-		push(a op b); \
+		if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
+			runtime_error("Operands must be numbers."); \
+			return INTERPRET_RUNTIME_ERROR; \
+		} \
+		double b = AS_NUMBER(pop()); \
+		double a = AS_NUMBER(pop()); \
+		push(value_type(a op b)); \
 	} while (false)
 
 	for (;;) {
@@ -96,19 +121,23 @@ static enum InterpretResult run(void)
 			push(constant);
 			break;
 		case OP_ADD:
-			BINARY_OP(+);
+			BINARY_OP(NUMBER_VAL, +);
 			break;
 		case OP_SUBTRACT:
-			BINARY_OP(-);
+			BINARY_OP(NUMBER_VAL, -);
 			break;
 		case OP_MULTIPLY:
-			BINARY_OP(*);
+			BINARY_OP(NUMBER_VAL, *);
 			break;
 		case OP_DIVIDE:
-			BINARY_OP(/);
+			BINARY_OP(NUMBER_VAL, /);
 			break;
 		case OP_NEGATE:
-			push(-pop());
+			if (!IS_NUMBER(peek(0))) {
+				runtime_error("Operand must be a number.");
+				return INTERPRET_RUNTIME_ERROR;
+			}
+			push(NUMBER_VAL(-AS_NUMBER(pop())));
 			break;
 		case OP_RETURN:
 			print_value(pop());
