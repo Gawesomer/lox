@@ -129,7 +129,7 @@ enum InterpretResult interpret(const char *source)
 	init_chunk(&chunk);
 
 	if (!compile(source, &chunk)) {
-		free_chunk(& chunk);
+		free_chunk(&chunk);
 		return INTERPRET_COMPILE_ERROR;
 	}
 

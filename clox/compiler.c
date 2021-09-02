@@ -47,12 +47,13 @@ static void error_at(struct Token *token, const char *message)
 	parser.panic_mode = true;
 	fprintf(stderr, "[line %d] Error", token->line);
 
-	if (token->type == TOKEN_EOF)
+	if (token->type == TOKEN_EOF) {
 		fprintf(stderr, " at end");
-	else if (token->type == TOKEN_ERROR)
+	} else if (token->type == TOKEN_ERROR) {
 		// Nothing.
-	else
+	} else {
 		fprintf(stderr, " at '%.*s'", token->length, token->start);
+	}
 
 	fprintf(stderr, ": %s\n", message);
 	parser.had_error = true;
@@ -94,12 +95,6 @@ static void consume(enum TokenType type, const char *message)
 static void emit_byte(uint8_t byte)
 {
 	write_chunk(current_chunk(), byte, parser.previous.line);
-}
-
-static void emit_bytes(uint8_t byte1, uint8_t byte2)
-{
-	emit_byte(byte1);
-	emit_byte(byte2);
 }
 
 static void emit_return(void)
