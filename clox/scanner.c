@@ -264,6 +264,10 @@ struct Token scan_token(void)
 		return make_token(TOKEN_COMMA);
 	case '.':
 		return make_token(TOKEN_DOT);
+	case '?':
+		return make_token(TOKEN_EROTEME);
+	case ':':
+		return make_token(TOKEN_COLON);
 	case '-':
 		return make_token(TOKEN_MINUS);
 	case '+':

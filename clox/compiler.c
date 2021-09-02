@@ -5,6 +5,10 @@
 #include "compiler.h"
 #include "scanner.h"
 
+#ifdef DEBUG_PRINT_CODE
+#include "debug.h"
+#endif
+
 struct Parser {
 	struct Token current;
 	struct Token previous;
@@ -15,6 +19,7 @@ struct Parser {
 enum Precedence {
 	PREC_NONE,
 	PREC_ASSIGNMENT,  // =
+	PREC_TERNARY,     // ?:
 	PREC_OR,          // or
 	PREC_AND,         // and
 	PREC_EQUALITY,    // == !=
@@ -122,6 +127,10 @@ static void emit_constant(Value value)
 static void end_compiler(void)
 {
 	emit_return();
+#ifdef DEBUG_PRINT_CODE
+	if (!parser.had_error)
+		disassemble_chunk(current_chunk(), "code");
+#endif
 }
 
 static void expression(void);
@@ -151,6 +160,16 @@ static void binary(void)
 	default:
 		return;  // Unreachable.
 	}
+}
+
+static void ternary(void)
+{
+	struct ParseRule *rule = get_rule(parser.previous.type);
+
+	parse_precedence((enum Precedence)(rule->precedence));
+	consume(TOKEN_COLON, "Expect ':' after '?' operator.");
+	parse_precedence((enum Precedence)(rule->precedence));
+	// TODO: Compile ternary
 }
 
 static void grouping(void)
@@ -188,13 +207,15 @@ struct ParseRule rules[] = {
 	[TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
+	[TOKEN_PLUS]          = {NULL,     binary, PREC_TERM},
+	[TOKEN_MINUS]         = {unary,    binary, PREC_TERM},
+	[TOKEN_STAR]          = {NULL,     binary, PREC_FACTOR},
+	[TOKEN_SLASH]         = {NULL,     binary, PREC_FACTOR},
 	[TOKEN_COMMA]         = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_DOT]           = {NULL,     NULL,   PREC_NONE},
-	[TOKEN_MINUS]         = {unary,    binary, PREC_TERM},
-	[TOKEN_PLUS]          = {NULL,     binary, PREC_TERM},
+	[TOKEN_EROTEME]       = {NULL,     ternary,PREC_TERNARY},
 	[TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
-	[TOKEN_SLASH]         = {NULL,     binary, PREC_FACTOR},
-	[TOKEN_STAR]          = {NULL,     binary, PREC_FACTOR},
+	[TOKEN_COLON]         = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_BANG]          = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_BANG_EQUAL]    = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_EQUAL]         = {NULL,     NULL,   PREC_NONE},
