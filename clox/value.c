@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "memory.h"
+#include "object.h"
 #include "value.h"
 
 void init_value_array(struct ValueArray *array)
@@ -40,6 +41,9 @@ void print_value(Value value)
 		break;
 	case VAL_NUMBER:
 		printf("%g", AS_NUMBER(value));
+		break;
+	case VAL_OBJ:
+		print_object(value);
 		break;
 	}
 }

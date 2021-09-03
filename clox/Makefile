@@ -8,7 +8,7 @@ ARFLAGS  = rvu
 
 all: main
 
-main: main.o chunk.o compiler.o debug.o line.o memory.o scanner.o value.o vm.o
+main: main.o chunk.o compiler.o debug.o line.o memory.o object.o scanner.o value.o vm.o
 
 clean:
 	rm -f *.o *.a *.~ main
