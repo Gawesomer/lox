@@ -26,6 +26,11 @@ struct ObjString *allocate_string(char *chars, int length)
 	return string;
 }
 
+struct ObjString *take_string(char *chars, int length)
+{
+	return allocate_string(chars, length);
+}
+
 struct ObjString *copy_string(const char *chars, int length)
 {
 	char *heap_chars = ALLOCATE(char, length + 1);
