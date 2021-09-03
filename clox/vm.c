@@ -138,6 +138,7 @@ static enum InterpretResult run(void)
 		case OP_EQUAL: {
 			Value b = pop();
 			Value a = pop();
+
 			push(BOOL_VAL(values_equal(a, b)));
 			break;
 		}

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "memory.h"
 #include "object.h"
@@ -59,6 +60,13 @@ bool values_equal(Value a, Value b)
 		return true;
 	case VAL_NUMBER:
 		return AS_NUMBER(a) == AS_NUMBER(b);
+	case VAL_OBJ: {
+		struct ObjString *a_string = AS_STRING(a);
+		struct ObjString *b_string = AS_STRING(b);
+
+		return a_string->length == b_string->length &&
+			memcmp(a_string->chars, b_string->chars, a_string->length) == 0;
+	}
 	default:
 		return false;  // Unreachable.
 	}
