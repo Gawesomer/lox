@@ -34,6 +34,7 @@ struct ValueArray {
 	Value *values;
 };
 
+bool values_equal(Value a, Value b);
 void init_value_array(struct ValueArray *array);
 void free_value_array(struct ValueArray *array);
 void write_value_array(struct ValueArray *array, Value value);
