@@ -70,6 +70,11 @@ static Value peek(int distance)
 	return vm.stack_top[-1 - distance];
 }
 
+static bool is_falsey(Value value)
+{
+	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static Value READ_CONSTANT_LONG(void)
 {
 	uint32_t offset = 0;
@@ -140,6 +145,9 @@ static enum InterpretResult run(void)
 			break;
 		case OP_DIVIDE:
 			BINARY_OP(NUMBER_VAL, /);
+			break;
+		case OP_NOT:
+			push(BOOL_VAL(is_falsey(pop())));
 			break;
 		case OP_NEGATE:
 			if (!IS_NUMBER(peek(0))) {
