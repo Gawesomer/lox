@@ -19,6 +19,7 @@ static void reset_stack(void)
 	if (vm.stack == NULL)
 		exit(1);
 	vm.stack_top = vm.stack;
+	vm.objects = NULL;
 }
 
 static void runtime_error(const char *format, ...)
@@ -45,6 +46,7 @@ void init_vm(void)
 void free_vm(void)
 {
 	free(vm.stack);
+	free_objects();
 }
 
 void push(Value value)

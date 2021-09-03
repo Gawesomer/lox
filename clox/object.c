@@ -14,6 +14,9 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	struct Obj *object = (struct Obj *)reallocate(NULL, 0, size);
 
 	object->type = type;
+
+	object->next = vm.objects;
+	vm.objects = object;
 	return object;
 }
 

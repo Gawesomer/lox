@@ -17,6 +17,7 @@ enum ObjType {
 
 struct Obj {
 	enum ObjType type;
+	struct Obj *next;
 };
 
 struct ObjString {
