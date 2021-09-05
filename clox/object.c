@@ -33,13 +33,12 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 {
 	int length = a->length + b->length;
 	struct ObjString *string = (struct ObjString *)allocate_object(
-					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
+					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length), OBJ_STRING);
 	const char *a_chars = (a->ptr == NULL) ? a->chars : a->ptr;
 	const char *b_chars = (b->ptr == NULL) ? b->chars : b->ptr;
 
 	memcpy(string->chars, a_chars, a->length);
 	memcpy(string->chars + a->length, b_chars, b->length);
-	string->chars[length] = '\0';
 	string->ptr = NULL;
 	string->length = length;
 	return string;
