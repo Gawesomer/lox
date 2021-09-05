@@ -1,6 +1,4 @@
 FROM debian
-WORKDIR /clox
+WORKDIR /c
 RUN apt update && apt install -y gcc gdb make valgrind
-COPY . .
-RUN make all
 CMD ["tail", "-f", "/dev/null"]

@@ -1,5 +1,6 @@
 Running dev container:
 ```
 docker build -t cdev .
-docker run -it --rm cdev bash
+docker-compose up -d
+docker exec -it cdev bash
 ```
