@@ -41,10 +41,13 @@ static void runtime_error(const char *format, ...)
 void init_vm(void)
 {
 	reset_stack();
+	vm.objects = NULL;
+	init_table(&vm.strings);
 }
 
 void free_vm(void)
 {
+	free_table(&vm.strings);
 	FREE_ARRAY(Value, vm.stack, vm.stack_capacity);
 	free_objects();
 }

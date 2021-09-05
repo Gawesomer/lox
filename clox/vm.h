@@ -2,6 +2,7 @@
 #define clox_vm_h
 
 #include "chunk.h"
+#include "table.h"
 #include "value.h"
 
 #define STACK_MIN 256
@@ -12,6 +13,7 @@ struct VM {
 	Value *stack;
 	Value *stack_top;
 	int stack_capacity;
+	struct Table strings;
 	struct Obj *objects;
 };
 

@@ -133,3 +133,28 @@ void table_add_all(struct Table *from, struct Table *to)
 			table_set(to, entry->key, entry->value);
 	}
 }
+
+struct ObjString *table_find_string(struct Table *table, const char *chars, int length, uint32_t hash)
+{
+	if (table->count == 0)
+		return NULL;
+
+	uint32_t index = hash % table->capacity;
+
+	for (;;) {
+		struct Entry *entry = &table->entries[index];
+
+		if (entry->key == NULL) {
+			// Stop if we find an empty non-tombstone entry.
+			if (IS_NIL(entry->value))
+				return NULL;
+		} else if (entry->key->length == length && entry->key->hash == hash) {
+			const char *key_chars = (entry->key->ptr == NULL) ? entry->key->chars : entry->key->ptr;
+
+			if (memcmp(key_chars, chars, length) == 0)
+				return entry->key;  // We found it.
+		}
+
+		index = (index + 1) % table->capacity;
+	}
+}
