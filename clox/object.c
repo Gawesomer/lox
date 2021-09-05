@@ -20,26 +20,27 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
-struct ObjString *copy_string(const char *chars, int length)
+struct ObjString *const_string(const char *chars, int length)
 {
-	struct ObjString *string = (struct ObjString *)allocate_object(
-					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
+	struct ObjString *string = ALLOCATE_OBJ(struct ObjString, OBJ_STRING);
 
-	memcpy(string->chars, chars, length);
-	string->chars[length] = '\0';
+	string->ptr = chars;
 	string->length = length;
 	return string;
 }
 
-struct ObjString *copy_strings(const char *s1, int l1, const char *s2, int l2)
+struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 {
-	int length = l1 + l2;
+	int length = a->length + b->length;
 	struct ObjString *string = (struct ObjString *)allocate_object(
 					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
+	const char *a_chars = (a->ptr == NULL) ? a->chars : a->ptr;
+	const char *b_chars = (b->ptr == NULL) ? b->chars : b->ptr;
 
-	memcpy(string->chars, s1, l1);
-	memcpy(string->chars + l1, s2, l2);
+	memcpy(string->chars, a_chars, a->length);
+	memcpy(string->chars + a->length, b_chars, b->length);
 	string->chars[length] = '\0';
+	string->ptr = NULL;
 	string->length = length;
 	return string;
 }
@@ -47,8 +48,12 @@ struct ObjString *copy_strings(const char *s1, int l1, const char *s2, int l2)
 void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
-	case OBJ_STRING:
-		printf("%s", AS_CSTRING(value));
+	case OBJ_STRING: {
+		struct ObjString *string = AS_STRING(value);
+		const char *chars = (string->ptr == NULL) ? string->chars : string->ptr;
+
+		printf("%.*s", string->length, chars);
 		break;
+	}
 	}
 }

@@ -85,7 +85,7 @@ static void concatenate(void)
 	struct ObjString *b = AS_STRING(pop());
 	struct ObjString *a = AS_STRING(pop());
 
-	struct ObjString *result = copy_strings(a->chars, a->length, b->chars, b->length);
+	struct ObjString *result = concat_strings(a, b);
 
 	push(OBJ_VAL(result));
 }

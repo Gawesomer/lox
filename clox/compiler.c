@@ -228,7 +228,7 @@ static void number(void)
 
 static void string(void)
 {
-	emit_constant(OBJ_VAL(copy_string(parser.previous.start + 1, parser.previous.length - 2)));
+	emit_constant(OBJ_VAL(const_string(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
 static void unary(void)

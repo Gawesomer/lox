@@ -24,7 +24,10 @@ void free_object(struct Obj *object)
 	case OBJ_STRING: {
 		struct ObjString *string = (struct ObjString *)object;
 
-		FREE_SIZE(string, FLEX_ARR_STRUCT_SIZE(struct ObjString, char, string->length + 1));
+		if (string->ptr == NULL)
+			FREE_SIZE(string, FLEX_ARR_STRUCT_SIZE(struct ObjString, char, string->length + 1));
+		else
+			FREE(struct ObjString, string);
 		break;
 	}
 	}

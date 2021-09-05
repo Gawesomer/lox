@@ -9,7 +9,6 @@
 #define IS_STRING(value) is_obj_type(value, OBJ_STRING)
 
 #define AS_STRING(value) ((struct ObjString *)AS_OBJ(value))
-#define AS_CSTRING(value) ((char *)AS_STRING(value)->chars)
 
 enum ObjType {
 	OBJ_STRING,
@@ -23,11 +22,12 @@ struct Obj {
 struct ObjString {
 	struct Obj obj;
 	int length;
+	const char *ptr;
 	char chars[];
 };
 
-struct ObjString *copy_string(const char *chars, int length);
-struct ObjString *copy_strings(const char *s1, int l1, const char *s2, int l2);
+struct ObjString *const_string(const char *chars, int length);
+struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b);
 void print_object(Value value);
 
 static inline bool is_obj_type(Value value, enum ObjType type)
