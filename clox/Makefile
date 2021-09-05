@@ -1,5 +1,5 @@
 CC	 = gcc
-CFLAGS	 = -g -ggdb3
+CFLAGS	 = -g -ggdb3 -O0 -g
 CPPFLAGS = -Wall -pedantic
 
 ARFLAGS  = rvu

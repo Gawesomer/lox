@@ -45,7 +45,7 @@ void init_vm(void)
 
 void free_vm(void)
 {
-	free(vm.stack);
+	free(vm.stack);  // TODO: Use reallocate()
 	free_objects();
 }
 
@@ -85,14 +85,7 @@ static void concatenate(void)
 	struct ObjString *b = AS_STRING(pop());
 	struct ObjString *a = AS_STRING(pop());
 
-	int length = a->length + b->length;
-	char *chars = ALLOCATE(char, length + 1);
-
-	memcpy(chars, a->chars, a->length);
-	memcpy(chars + a->length, b->chars, b->length);
-	chars[length] = '\0';
-
-	struct ObjString *result = take_string(chars, length);
+	struct ObjString *result = copy_strings(a->chars, a->length, b->chars, b->length);
 
 	push(OBJ_VAL(result));
 }

@@ -23,11 +23,11 @@ struct Obj {
 struct ObjString {
 	struct Obj obj;
 	int length;
-	char *chars;
+	char chars[];
 };
 
-struct ObjString *take_string(char *chars, int length);
 struct ObjString *copy_string(const char *chars, int length);
+struct ObjString *copy_strings(const char *s1, int l1, const char *s2, int l2);
 void print_object(Value value);
 
 static inline bool is_obj_type(Value value, enum ObjType type)

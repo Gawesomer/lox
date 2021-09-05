@@ -20,27 +20,28 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
-struct ObjString *allocate_string(char *chars, int length)
+struct ObjString *copy_string(const char *chars, int length)
 {
-	struct ObjString *string = ALLOCATE_OBJ(struct ObjString, OBJ_STRING);
+	struct ObjString *string = (struct ObjString *)allocate_object(
+					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
 
+	memcpy(string->chars, chars, length);
+	string->chars[length] = '\0';
 	string->length = length;
-	string->chars = chars;
 	return string;
 }
 
-struct ObjString *take_string(char *chars, int length)
+struct ObjString *copy_strings(const char *s1, int l1, const char *s2, int l2)
 {
-	return allocate_string(chars, length);
-}
+	int length = l1 + l2;
+	struct ObjString *string = (struct ObjString *)allocate_object(
+					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
 
-struct ObjString *copy_string(const char *chars, int length)
-{
-	char *heap_chars = ALLOCATE(char, length + 1);
-
-	memcpy(heap_chars, chars, length);
-	heap_chars[length] = '\0';
-	return allocate_string(heap_chars, length);
+	memcpy(string->chars, s1, l1);
+	memcpy(string->chars + l1, s2, l2);
+	string->chars[length] = '\0';
+	string->length = length;
+	return string;
 }
 
 void print_object(Value value)
