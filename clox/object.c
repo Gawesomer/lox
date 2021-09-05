@@ -20,12 +20,24 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
+static uint32_t hash_string(const char *key, int length)
+{  // FNV-1a
+	uint32_t hash = 2166136261u;
+
+	for (int i = 0; i < length; i++) {
+		hash ^= (uint8_t)key[i];
+		hash *= 16777619;
+	}
+	return hash;
+}
+
 struct ObjString *const_string(const char *chars, int length)
 {
 	struct ObjString *string = ALLOCATE_OBJ(struct ObjString, OBJ_STRING);
 
 	string->ptr = chars;
 	string->length = length;
+	string->hash = hash_string(string->ptr, string->length);
 	return string;
 }
 
@@ -41,6 +53,7 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 	memcpy(string->chars + a->length, b_chars, b->length);
 	string->ptr = NULL;
 	string->length = length;
+	string->hash = hash_string(string->chars, string->length);
 	return string;
 }
 
