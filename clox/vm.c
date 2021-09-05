@@ -45,7 +45,7 @@ void init_vm(void)
 
 void free_vm(void)
 {
-	free(vm.stack);  // TODO: Use reallocate()
+	FREE_ARRAY(Value, vm.stack, vm.stack_capacity);
 	free_objects();
 }
 
