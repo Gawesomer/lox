@@ -66,6 +66,7 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 	struct ObjString *interned = table_find_string(&vm.strings, string->chars, string->length, hash);
 
 	if (interned != NULL) {
+		vm.objects = string->obj.next;  // Make sure to remove from VM's object list since unused.
 		FREE_SIZE(string, FLEX_ARR_STRUCT_SIZE(struct ObjString, char, string->length));
 		return interned;
 	}
