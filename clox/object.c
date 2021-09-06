@@ -21,20 +21,9 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
-static uint32_t hash_string(const char *key, int length)
-{  // FNV-1a
-	uint32_t hash = 2166136261u;
-
-	for (int i = 0; i < length; i++) {
-		hash ^= (uint8_t)key[i];
-		hash *= 16777619;
-	}
-	return hash;
-}
-
 struct ObjString *const_string(const char *chars, int length)
 {
-	uint32_t hash = hash_string(chars, length);
+	uint32_t hash = hash_bytes((const uint8_t *)chars, length);
 	struct ObjString *interned = table_find_string(&vm.strings, chars, length, hash);
 
 	if (interned != NULL)
@@ -45,7 +34,7 @@ struct ObjString *const_string(const char *chars, int length)
 	string->ptr = chars;
 	string->length = length;
 	string->hash = hash;
-	table_set(&vm.strings, string, NIL_VAL);
+	table_set(&vm.strings, string, &string->hash, 0, NIL_VAL);
 	return string;
 }
 
@@ -62,7 +51,7 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 	string->ptr = NULL;
 	string->length = length;
 
-	uint32_t hash = hash_string(string->chars, string->length);
+	uint32_t hash = hash_bytes((const uint8_t *)string->chars, string->length);
 	struct ObjString *interned = table_find_string(&vm.strings, string->chars, string->length, hash);
 
 	if (interned != NULL) {
@@ -71,8 +60,8 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 		return interned;
 	}
 
-	string->hash = hash_string(string->chars, string->length);
-	table_set(&vm.strings, string, NIL_VAL);
+	string->hash = hash;
+	table_set(&vm.strings, string, &string->hash, 0, NIL_VAL);
 	return string;
 }
 
