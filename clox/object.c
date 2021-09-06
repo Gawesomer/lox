@@ -71,6 +71,7 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 	}
 
 	string->hash = hash_string(string->chars, string->length);
+	table_set(&vm.strings, string, NIL_VAL);
 	return string;
 }
 
