@@ -20,15 +20,30 @@ void free_table(struct Table *table)
 	init_table(table);
 }
 
-static struct Entry *find_entry(struct Entry *entries, int capacity, struct ObjString *key)
+uint32_t hash_bytes(const uint8_t *bytes, size_t size)
+{  // FNV-1a
+	uint32_t hash = 2166136261u;
+
+	for (int i = 0; i < size; i++) {
+		hash ^= bytes[i];
+		hash *= 16777619;
+	}
+	return hash;
+}
+
+static struct Entry *find_entry(struct Entry *entries, int capacity, Value key, uint32_t *hash, size_t size)
 {
-	uint32_t index = key->hash % capacity;
+	uint32_t index;
+
+	index = (hash == NULL) ? hash_bytes((const uint8_t *)&key.as, size) : *hash;
+	index %= capacity;
+
 	struct Entry *tombstone = NULL;
 
 	for (;;) {
 		struct Entry *entry = &entries[index];
 
-		if (entry->key == NULL) {
+		if (IS_NIL(entry->key)) {
 			if (IS_NIL(entry->value)) {
 				// Empty entry.
 				return tombstone != NULL ? tombstone : entry;
@@ -37,7 +52,7 @@ static struct Entry *find_entry(struct Entry *entries, int capacity, struct ObjS
 				if (tombstone == NULL)
 					tombstone = entry;
 			}
-		} else if (entry->key == key) {
+		} else if (values_equal(entry->key, key)) {
 			// We found the key.
 			return entry;
 		}
@@ -46,14 +61,14 @@ static struct Entry *find_entry(struct Entry *entries, int capacity, struct ObjS
 	}
 }
 
-bool table_get(struct Table *table, struct ObjString *key, Value *value)
+bool table_get(struct Table *table, Value key, uint32_t *hash, size_t size, Value *value)
 {
 	if (table->count == 0)
 		return false;
 
-	struct Entry *entry = find_entry(table->entries, table->capacity, key);
+	struct Entry *entry = find_entry(table->entries, table->capacity, key, hash, size);
 
-	if (entry->key == NULL)
+	if (IS_NIL(entry->key))
 		return false;
 
 	*value = entry->value;
@@ -65,7 +80,7 @@ static void adjust_capacity(struct Table *table, int capacity)
 	struct Entry *entries = ALLOCATE(struct Entry, capacity);
 
 	for (int i = 0; i < capacity; i++) {
-		entries[i].key = NULL;
+		entries[i].key = NIL_VAL;
 		entries[i].value = NIL_VAL;
 	}
 
@@ -73,12 +88,13 @@ static void adjust_capacity(struct Table *table, int capacity)
 	for (int i = 0; i < table->capacity; i++) {
 		struct Entry *entry = &table->entries[i];
 
-		if (entry->key == NULL)
+		if (IS_NIL(entry->key))
 			continue;
 
-		struct Entry *dest = find_entry(entries, capacity, entry->key);
+		struct Entry *dest = find_entry(entries, capacity, entry->key, &entry->hash, 0);
 
 		dest->key = entry->key;
+		dest->hash = entry->hash;
 		dest->value = entry->value;
 		table->count++;
 	}
@@ -88,7 +104,7 @@ static void adjust_capacity(struct Table *table, int capacity)
 	table->capacity = capacity;
 }
 
-bool table_set(struct Table *table, struct ObjString *key, Value value)
+bool table_set(struct Table *table, Value key, uint32_t *hash, size_t size, Value value)
 {
 	if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
 		int capacity = GROW_CAPACITY(table->capacity);
@@ -96,30 +112,32 @@ bool table_set(struct Table *table, struct ObjString *key, Value value)
 		adjust_capacity(table, capacity);
 	}
 
-	struct Entry *entry = find_entry(table->entries, table->capacity, key);
-	bool is_new_key = entry->key == NULL;
+	uint32_t computed_hash = (hash == NULL) ? hash_bytes((const uint8_t *)&key.as, size) : *hash;
+	struct Entry *entry = find_entry(table->entries, table->capacity, key, &computed_hash, 0);
+	bool is_new_key = IS_NIL(entry->key);
 
 	if (is_new_key && IS_NIL(entry->value))
 		table->count++;
 
 	entry->key = key;
+	entry->hash = computed_hash;
 	entry->value = value;
 	return is_new_key;
 }
 
-bool table_delete(struct Table *table, struct ObjString *key)
+bool table_delete(struct Table *table, Value key, uint32_t *hash, size_t size)
 {
 	if (table->count == 0)
 		return false;
 
 	// Find the entry.
-	struct Entry *entry = find_entry(table->entries, table->capacity, key);
+	struct Entry *entry = find_entry(table->entries, table->capacity, key, hash, size);
 
-	if (entry->key == NULL)
+	if (IS_NIL(entry->key))
 		return false;
 
 	// Place a tombstone in the entry.
-	entry->key = NULL;
+	entry->key = NIL_VAL;
 	entry->value = BOOL_VAL(true);
 	return true;
 }
@@ -129,8 +147,8 @@ void table_add_all(struct Table *from, struct Table *to)
 	for (int i = 0; i < from->capacity; i++) {
 		struct Entry *entry = &from->entries[i];
 
-		if (entry->key != NULL)
-			table_set(to, entry->key, entry->value);
+		if (!IS_NIL(entry->key))
+			table_set(to, entry->key, &entry->hash, 0, entry->value);
 	}
 }
 
@@ -144,15 +162,19 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 	for (;;) {
 		struct Entry *entry = &table->entries[index];
 
-		if (entry->key == NULL) {
+		if (IS_NIL(entry->key)) {
 			// Stop if we find an empty non-tombstone entry.
 			if (IS_NIL(entry->value))
 				return NULL;
-		} else if (entry->key->length == length && entry->key->hash == hash) {
-			const char *key_chars = (entry->key->ptr == NULL) ? entry->key->chars : entry->key->ptr;
+		} else {
+			struct ObjString *key_str = AS_STRING(entry->key);
 
-			if (memcmp(key_chars, chars, length) == 0)
-				return entry->key;  // We found it.
+			if (key_str->length == length && entry->hash == hash) {
+				const char *key_chars = (key_str->ptr == NULL) ? key_str->chars : key_str->ptr;
+
+				if (memcmp(key_chars, chars, length) == 0)
+					return key_str;  // We found it.
+			}
 		}
 
 		index = (index + 1) % table->capacity;
