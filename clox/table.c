@@ -35,7 +35,7 @@ static struct Entry *find_entry(struct Entry *entries, int capacity, Value key, 
 {
 	uint32_t index;
 
-	index = (hash == NULL) ? hash_bytes((const uint8_t *)&key, size) : *hash;
+	index = (hash == NULL) ? hash_bytes((const uint8_t *)&key.as, size) : *hash;
 	index %= capacity;
 
 	struct Entry *tombstone = NULL;
@@ -112,7 +112,7 @@ bool table_set(struct Table *table, Value key, uint32_t *hash, size_t size, Valu
 		adjust_capacity(table, capacity);
 	}
 
-	uint32_t computed_hash = (hash == NULL) ? hash_bytes((const uint8_t *)&key, size) : *hash;
+	uint32_t computed_hash = (hash == NULL) ? hash_bytes((const uint8_t *)&key.as, size) : *hash;
 	struct Entry *entry = find_entry(table->entries, table->capacity, key, &computed_hash, 0);
 	bool is_new_key = IS_NIL(entry->key);
 
