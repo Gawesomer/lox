@@ -126,9 +126,9 @@ static void emit_return(void)
 	emit_byte(OP_RETURN);
 }
 
-static int make_constant(Value value)
+static int make_constant(enum OpCode op, enum OpCode op_long, Value value)
 {
-	int constant = write_constant(current_chunk(), value, parser.previous.line);
+	int constant = write_constant_op(current_chunk(), op, op_long, value, parser.previous.line);
 
 	if (constant > 0xFFFFFF) {
 		error("Too many constants in one chunk.");
@@ -138,9 +138,9 @@ static int make_constant(Value value)
 	return constant;
 }
 
-static void emit_constant(Value value)
+static void emit_constant(enum OpCode op, enum OpCode op_long, Value value)
 {
-	make_constant(value);
+	make_constant(op, op_long, value);
 }
 
 static void end_compiler(void)
@@ -157,6 +157,22 @@ static void statement(void);
 static void declaration(void);
 static struct ParseRule *get_rule(enum TokenType type);
 static void parse_precedence(enum Precedence precedence);
+
+static Value identifier_constant(struct Token *name)
+{
+	return OBJ_VAL(const_string(name->start, name->length));
+}
+
+static Value parse_variable(const char *error_message)
+{
+	consume(TOKEN_IDENTIFIER, error_message);
+	return identifier_constant(&parser.previous);
+}
+
+static void define_variable(Value global)
+{
+	emit_constant(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
+}
 
 static void binary(void)
 {
@@ -238,12 +254,12 @@ static void number(void)
 {
 	double value = strtod(parser.previous.start, NULL);
 
-	emit_constant(NUMBER_VAL(value));
+	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, NUMBER_VAL(value));
 }
 
 static void string(void)
 {
-	emit_constant(OBJ_VAL(const_string(parser.previous.start + 1, parser.previous.length - 2)));
+	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, OBJ_VAL(const_string(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
 static void unary(void)
@@ -341,6 +357,20 @@ static void expression(void)
 	parse_precedence(PREC_ASSIGNMENT);
 }
 
+static void var_declaration(void)
+{
+	Value global = parse_variable("Expect variable name.");
+
+	if (match(TOKEN_EQUAL))
+		expression();
+	else
+		emit_byte(OP_NIL);
+
+	consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+
+	define_variable(global);
+}
+
 static void expression_statement(void)
 {
 	expression();
@@ -383,7 +413,10 @@ static void synchronize(void)
 
 static void declaration(void)
 {
-	statement();
+	if (match(TOKEN_VAR))
+		var_declaration();
+	else
+		statement();
 
 	if (parser.panic_mode)
 		synchronize();

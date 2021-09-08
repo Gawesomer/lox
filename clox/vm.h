@@ -13,6 +13,7 @@ struct VM {
 	Value *stack;
 	Value *stack_top;
 	int stack_capacity;
+	struct Table globals;
 	struct Table strings;
 	struct Obj *objects;
 };

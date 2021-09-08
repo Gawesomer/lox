@@ -47,6 +47,7 @@ void init_vm(void)
 
 void free_vm(void)
 {
+	free_table(&vm.globals);
 	free_table(&vm.strings);
 	FREE_ARRAY(Value, vm.stack, vm.stack_capacity);
 	free_objects();
@@ -155,6 +156,20 @@ static enum InterpretResult run(void)
 		case OP_POP:
 			pop();
 			break;
+		case OP_DEFINE_GLOBAL: {
+			struct ObjString *name = AS_STRING(READ_CONSTANT());
+
+			table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0));
+			pop();
+			break;
+		}
+		case OP_DEFINE_GLOBAL_LONG: {
+			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
+
+			table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0));
+			pop();
+			break;
+		}
 		case OP_EQUAL: {
 			Value b = pop();
 			Value a = pop();
