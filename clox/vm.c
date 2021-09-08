@@ -198,9 +198,12 @@ static enum InterpretResult run(void)
 			}
 			push(NUMBER_VAL(-AS_NUMBER(pop())));
 			break;
-		case OP_RETURN:
+		case OP_PRINT:
 			print_value(pop());
 			printf("\n");
+			break;
+		case OP_RETURN:
+			// Exit interpreter.
 			return INTERPRET_OK;
 		}
 	}
