@@ -344,7 +344,7 @@ static void expression(void)
 static void expression_statement(void)
 {
 	expression();
-	consume(TOKEN_SEMICOLON, "Expect ';' after semicolon.");
+	consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
 	emit_byte(OP_POP);
 }
 
