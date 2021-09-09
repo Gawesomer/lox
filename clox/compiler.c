@@ -32,8 +32,8 @@ enum Precedence {
 };
 
 struct ParseRule {
-	void (*prefix)(void);
-	void (*infix)(void);
+	void (*prefix)(bool);
+	void (*infix)(bool);
 	enum Precedence precedence;
 };
 
@@ -174,7 +174,7 @@ static void define_variable(Value global)
 	emit_constant(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
 }
 
-static void binary(void)
+static void binary(bool can_assign)
 {
 	enum TokenType operator_type = parser.previous.type;
 	struct ParseRule *rule = get_rule(operator_type);
@@ -217,7 +217,7 @@ static void binary(void)
 	}
 }
 
-static void literal(void)
+static void literal(bool can_assign)
 {
 	switch (parser.previous.type) {
 	case TOKEN_FALSE:
@@ -234,7 +234,7 @@ static void literal(void)
 	}
 }
 
-static void ternary(void)
+static void ternary(bool can_assign)
 {
 	struct ParseRule *rule = get_rule(parser.previous.type);
 
@@ -244,29 +244,29 @@ static void ternary(void)
 	// TODO: Compile ternary
 }
 
-static void grouping(void)
+static void grouping(bool can_assign)
 {
 	expression();
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void number(void)
+static void number(bool can_assign)
 {
 	double value = strtod(parser.previous.start, NULL);
 
 	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, NUMBER_VAL(value));
 }
 
-static void string(void)
+static void string(bool can_assign)
 {
 	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, OBJ_VAL(const_string(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-static void named_variable(struct Token name)
+static void named_variable(struct Token name, bool can_assign)
 {
 	Value variable = identifier_constant(&name);
 
-	if (match(TOKEN_EQUAL)) {
+	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
 		emit_constant(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, variable);
 	} else {
@@ -274,12 +274,12 @@ static void named_variable(struct Token name)
 	}
 }
 
-static void variable(void)
+static void variable(bool can_assign)
 {
-	named_variable(parser.previous);
+	named_variable(parser.previous, can_assign);
 }
 
-static void unary(void)
+static void unary(bool can_assign)
 {
 	enum TokenType operator_type = parser.previous.type;
 
@@ -347,21 +347,26 @@ struct ParseRule rules[] = {
 static void parse_precedence(enum Precedence precedence)
 {
 	advance();
-	void (*prefix_rule)(void) = get_rule(parser.previous.type)->prefix;
+	void (*prefix_rule)(bool) = get_rule(parser.previous.type)->prefix;
 
 	if (prefix_rule == NULL) {
 		error("Expect expression.");
 		return;
 	}
 
-	prefix_rule();
+	bool can_assign = precedence <= PREC_ASSIGNMENT;
+
+	prefix_rule(can_assign);
 
 	while (precedence <= get_rule(parser.current.type)->precedence) {
 		advance();
-		void (*infix_rule)(void) = get_rule(parser.previous.type)->infix;
+		void (*infix_rule)(bool) = get_rule(parser.previous.type)->infix;
 
-		infix_rule();
+		infix_rule(can_assign);
 	}
+
+	if (can_assign && match(TOKEN_EQUAL))
+		error("Invalid assignment target.");
 }
 
 static struct ParseRule *get_rule(enum TokenType type)
