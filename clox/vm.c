@@ -156,6 +156,28 @@ static enum InterpretResult run(void)
 		case OP_POP:
 			pop();
 			break;
+		case OP_GET_GLOBAL: {
+			struct ObjString *name = AS_STRING(READ_CONSTANT());
+			Value value;
+
+			if (!table_get(&vm.globals, OBJ_VAL(name), &name->hash, 0, &value)) {
+				runtime_error("Undefined variable name '%s'.", name->ptr);
+				return INTERPRET_RUNTIME_ERROR;
+			}
+			push(value);
+			break;
+		}
+		case OP_GET_GLOBAL_LONG: {
+			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
+			Value value;
+
+			if (!table_get(&vm.globals, OBJ_VAL(name), &name->hash, 0, &value)) {
+				runtime_error("Undefined variable name '%s'.", name->ptr);
+				return INTERPRET_RUNTIME_ERROR;
+			}
+			push(value);
+			break;
+		}
 		case OP_DEFINE_GLOBAL: {
 			struct ObjString *name = AS_STRING(READ_CONSTANT());
 

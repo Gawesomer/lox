@@ -262,6 +262,18 @@ static void string(void)
 	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, OBJ_VAL(const_string(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
+static void named_variable(struct Token name)
+{
+	Value variable = identifier_constant(&name);
+
+	emit_constant(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, variable);
+}
+
+static void variable(void)
+{
+	named_variable(parser.previous);
+}
+
 static void unary(void)
 {
 	enum TokenType operator_type = parser.previous.type;
@@ -304,7 +316,7 @@ struct ParseRule rules[] = {
 	[TOKEN_GREATER_EQUAL] = {NULL,     binary,  PREC_COMPARISON},
 	[TOKEN_LESS]          = {NULL,     binary,  PREC_COMPARISON},
 	[TOKEN_LESS_EQUAL]    = {NULL,     binary,  PREC_COMPARISON},
-	[TOKEN_IDENTIFIER]    = {NULL,     NULL,    PREC_NONE},
+	[TOKEN_IDENTIFIER]    = {variable, NULL,    PREC_NONE},
 	[TOKEN_STRING]        = {string,   NULL,    PREC_NONE},
 	[TOKEN_NUMBER]        = {number,   NULL,    PREC_NONE},
 	[TOKEN_AND]           = {NULL,     NULL,    PREC_NONE},
