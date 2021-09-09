@@ -192,6 +192,26 @@ static enum InterpretResult run(void)
 			pop();
 			break;
 		}
+		case OP_SET_GLOBAL: {
+			struct ObjString *name = AS_STRING(READ_CONSTANT());
+
+			if (table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0))) {
+				table_delete(&vm.globals, OBJ_VAL(name), &name->hash, 0);
+				runtime_error("Undefined variable '%s'.", name->ptr);
+				return INTERPRET_RUNTIME_ERROR;
+			}
+			break;
+		}
+		case OP_SET_GLOBAL_LONG: {
+			struct ObjString *name = AS_STRING(READ_CONSTANT());
+
+			if (table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0))) {
+				table_delete(&vm.globals, OBJ_VAL(name), &name->hash, 0);
+				runtime_error("Undefined variable '%s'.", name->ptr);
+				return INTERPRET_RUNTIME_ERROR;
+			}
+			break;
+		}
 		case OP_EQUAL: {
 			Value b = pop();
 			Value a = pop();

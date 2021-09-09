@@ -266,7 +266,12 @@ static void named_variable(struct Token name)
 {
 	Value variable = identifier_constant(&name);
 
-	emit_constant(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, variable);
+	if (match(TOKEN_EQUAL)) {
+		expression();
+		emit_constant(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, variable);
+	} else {
+		emit_constant(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, variable);
+	}
 }
 
 static void variable(void)
