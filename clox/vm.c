@@ -203,7 +203,7 @@ static enum InterpretResult run(void)
 			break;
 		}
 		case OP_SET_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT());
+			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
 
 			if (table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0))) {
 				table_delete(&vm.globals, OBJ_VAL(name), &name->hash, 0);
