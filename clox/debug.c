@@ -78,7 +78,7 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 	case OP_DEFINE_GLOBAL_LONG:
 		return constant_long_instruction("OP_DEFINE_GLOBAL_LONG", chunk, offset);
 	case OP_SET_GLOBAL:
-		return constant_long_instruction("OP_SET_GLOBAL", chunk, offset);
+		return constant_instruction("OP_SET_GLOBAL", chunk, offset);
 	case OP_SET_GLOBAL_LONG:
 		return constant_long_instruction("OP_SET_GLOBAL_LONG", chunk, offset);
 	case OP_EQUAL:
