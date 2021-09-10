@@ -160,7 +160,7 @@ static enum InterpretResult run(void)
 			struct ObjString *name = AS_STRING(READ_CONSTANT());
 			Value value;
 
-			if (!table_get(&vm.globals, OBJ_VAL(name), &name->hash, 0, &value)) {
+			if (!table_get(&vm.globals, OBJ_VAL(name), &value)) {
 				runtime_error("Undefined variable name '%s'.", name->ptr);
 				return INTERPRET_RUNTIME_ERROR;
 			}
@@ -171,7 +171,7 @@ static enum InterpretResult run(void)
 			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
 			Value value;
 
-			if (!table_get(&vm.globals, OBJ_VAL(name), &name->hash, 0, &value)) {
+			if (!table_get(&vm.globals, OBJ_VAL(name), &value)) {
 				runtime_error("Undefined variable name '%s'.", name->ptr);
 				return INTERPRET_RUNTIME_ERROR;
 			}
@@ -181,22 +181,22 @@ static enum InterpretResult run(void)
 		case OP_DEFINE_GLOBAL: {
 			struct ObjString *name = AS_STRING(READ_CONSTANT());
 
-			table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0));
+			table_set(&vm.globals, OBJ_VAL(name), peek(0));
 			pop();
 			break;
 		}
 		case OP_DEFINE_GLOBAL_LONG: {
 			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
 
-			table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0));
+			table_set(&vm.globals, OBJ_VAL(name), peek(0));
 			pop();
 			break;
 		}
 		case OP_SET_GLOBAL: {
 			struct ObjString *name = AS_STRING(READ_CONSTANT());
 
-			if (table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0))) {
-				table_delete(&vm.globals, OBJ_VAL(name), &name->hash, 0);
+			if (table_set(&vm.globals, OBJ_VAL(name), peek(0))) {
+				table_delete(&vm.globals, OBJ_VAL(name));
 				runtime_error("Undefined variable '%s'.", name->ptr);
 				return INTERPRET_RUNTIME_ERROR;
 			}
@@ -205,8 +205,8 @@ static enum InterpretResult run(void)
 		case OP_SET_GLOBAL_LONG: {
 			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
 
-			if (table_set(&vm.globals, OBJ_VAL(name), &name->hash, 0, peek(0))) {
-				table_delete(&vm.globals, OBJ_VAL(name), &name->hash, 0);
+			if (table_set(&vm.globals, OBJ_VAL(name), peek(0))) {
+				table_delete(&vm.globals, OBJ_VAL(name));
 				runtime_error("Undefined variable '%s'.", name->ptr);
 				return INTERPRET_RUNTIME_ERROR;
 			}

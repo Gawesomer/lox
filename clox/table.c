@@ -31,13 +31,25 @@ uint32_t hash_bytes(const uint8_t *bytes, size_t size)
 	return hash;
 }
 
-static struct Entry *find_entry(struct Entry *entries, int capacity, Value key, uint32_t *hash, size_t size)
+static uint32_t hash_value(Value value)
 {
-	uint32_t index;
+	switch (value.type) {
+	case VAL_BOOL:
+		return AS_BOOL(value) ? 3 : 5;
+	case VAL_NIL:
+		return hash_bytes(NULL, 0);
+	case VAL_NUMBER:
+		return hash_bytes((const uint8_t *)&AS_NUMBER(value), sizeof(double));
+	case VAL_OBJ:
+		return AS_STRING(value)->hash;
+	default:  // Unreachable.
+		return 0;
+	}
+}
 
-	index = (hash == NULL) ? hash_bytes((const uint8_t *)&key.as, size) : *hash;
-	index %= capacity;
-
+static struct Entry *find_entry(struct Entry *entries, int capacity, Value key)
+{
+	uint32_t index = hash_value(key) % capacity;
 	struct Entry *tombstone = NULL;
 
 	for (;;) {
@@ -61,12 +73,12 @@ static struct Entry *find_entry(struct Entry *entries, int capacity, Value key, 
 	}
 }
 
-bool table_get(struct Table *table, Value key, uint32_t *hash, size_t size, Value *value)
+bool table_get(struct Table *table, Value key, Value *value)
 {
 	if (table->count == 0)
 		return false;
 
-	struct Entry *entry = find_entry(table->entries, table->capacity, key, hash, size);
+	struct Entry *entry = find_entry(table->entries, table->capacity, key);
 
 	if (IS_NIL(entry->key))
 		return false;
@@ -91,10 +103,9 @@ static void adjust_capacity(struct Table *table, int capacity)
 		if (IS_NIL(entry->key))
 			continue;
 
-		struct Entry *dest = find_entry(entries, capacity, entry->key, &entry->hash, 0);
+		struct Entry *dest = find_entry(entries, capacity, entry->key);
 
 		dest->key = entry->key;
-		dest->hash = entry->hash;
 		dest->value = entry->value;
 		table->count++;
 	}
@@ -104,7 +115,7 @@ static void adjust_capacity(struct Table *table, int capacity)
 	table->capacity = capacity;
 }
 
-bool table_set(struct Table *table, Value key, uint32_t *hash, size_t size, Value value)
+bool table_set(struct Table *table, Value key, Value value)
 {
 	if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
 		int capacity = GROW_CAPACITY(table->capacity);
@@ -112,26 +123,24 @@ bool table_set(struct Table *table, Value key, uint32_t *hash, size_t size, Valu
 		adjust_capacity(table, capacity);
 	}
 
-	uint32_t computed_hash = (hash == NULL) ? hash_bytes((const uint8_t *)&key.as, size) : *hash;
-	struct Entry *entry = find_entry(table->entries, table->capacity, key, &computed_hash, 0);
+	struct Entry *entry = find_entry(table->entries, table->capacity, key);
 	bool is_new_key = IS_NIL(entry->key);
 
 	if (is_new_key && IS_NIL(entry->value))
 		table->count++;
 
 	entry->key = key;
-	entry->hash = computed_hash;
 	entry->value = value;
 	return is_new_key;
 }
 
-bool table_delete(struct Table *table, Value key, uint32_t *hash, size_t size)
+bool table_delete(struct Table *table, Value key)
 {
 	if (table->count == 0)
 		return false;
 
 	// Find the entry.
-	struct Entry *entry = find_entry(table->entries, table->capacity, key, hash, size);
+	struct Entry *entry = find_entry(table->entries, table->capacity, key);
 
 	if (IS_NIL(entry->key))
 		return false;
@@ -148,7 +157,7 @@ void table_add_all(struct Table *from, struct Table *to)
 		struct Entry *entry = &from->entries[i];
 
 		if (!IS_NIL(entry->key))
-			table_set(to, entry->key, &entry->hash, 0, entry->value);
+			table_set(to, entry->key, entry->value);
 	}
 }
 
@@ -169,7 +178,7 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 		} else {
 			struct ObjString *key_str = AS_STRING(entry->key);
 
-			if (key_str->length == length && entry->hash == hash) {
+			if (key_str->length == length && key_str->hash == hash) {
 				const char *key_chars = (key_str->ptr == NULL) ? key_str->chars : key_str->ptr;
 
 				if (memcmp(key_chars, chars, length) == 0)

@@ -34,7 +34,7 @@ struct ObjString *const_string(const char *chars, int length)
 	string->ptr = chars;
 	string->length = length;
 	string->hash = hash;
-	table_set(&vm.strings, OBJ_VAL(string), &string->hash, 0, NIL_VAL);
+	table_set(&vm.strings, OBJ_VAL(string), NIL_VAL);
 	return string;
 }
 
@@ -61,7 +61,7 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 	}
 
 	string->hash = hash;
-	table_set(&vm.strings, OBJ_VAL(string), &string->hash, 0, NIL_VAL);
+	table_set(&vm.strings, OBJ_VAL(string), NIL_VAL);
 	return string;
 }
 
