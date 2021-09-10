@@ -43,6 +43,6 @@ void init_chunk(struct Chunk *chunk);
 void free_chunk(struct Chunk *chunk);
 void write_chunk(struct Chunk *chunk, uint8_t byte, int line);
 int add_constant(struct Chunk *chunk, Value value);
-int write_constant_op(struct Chunk *chunk, enum OpCode op, enum OpCode op_long, Value value, int line);
+int write_constant_op(struct Chunk *chunk, enum OpCode op, enum OpCode op_long, Value value, int constant, int line);
 
 #endif

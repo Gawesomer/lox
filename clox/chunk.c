@@ -40,10 +40,8 @@ int add_constant(struct Chunk *chunk, Value value)
 	return chunk->constants.count - 1;
 }
 
-int write_constant_op(struct Chunk *chunk, enum OpCode op, enum OpCode op_long, Value value, int line)
+int write_constant_op(struct Chunk *chunk, enum OpCode op, enum OpCode op_long, Value value, int constant, int line)
 {
-	int constant = add_constant(chunk, value);
-
 	if (constant < 256) {
 		write_chunk(chunk, op, line);
 		write_chunk(chunk, constant, line);

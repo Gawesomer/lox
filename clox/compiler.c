@@ -4,6 +4,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "table.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -39,6 +40,7 @@ struct ParseRule {
 
 struct Parser parser;
 struct Chunk *compiling_chunk;
+struct Table identifiers;
 
 static struct Chunk *current_chunk(void)
 {
@@ -128,7 +130,16 @@ static void emit_return(void)
 
 static int make_constant(enum OpCode op, enum OpCode op_long, Value value)
 {
-	int constant = write_constant_op(current_chunk(), op, op_long, value, parser.previous.line);
+	int constant;
+	Value get_res;
+
+	if (table_get(&identifiers, value, &get_res)) {
+		constant = AS_NUMBER(get_res);
+	} else {
+		constant = add_constant(current_chunk(), value);
+		table_set(&identifiers, value, NUMBER_VAL(constant));
+	}
+	write_constant_op(current_chunk(), op, op_long, value, constant, parser.previous.line);
 
 	if (constant > 0xFFFFFF) {
 		error("Too many constants in one chunk.");
@@ -455,6 +466,7 @@ static void statement(void)
 bool compile(const char *source, struct Chunk *chunk)
 {
 	init_scanner(source);
+	init_table(&identifiers);
 	compiling_chunk = chunk;
 
 	parser.had_error = false;
@@ -466,5 +478,6 @@ bool compile(const char *source, struct Chunk *chunk)
 		declaration();
 
 	end_compiler();
+	free_table(&identifiers);
 	return !parser.had_error;
 }
