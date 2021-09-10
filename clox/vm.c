@@ -19,6 +19,7 @@ static void reset_stack(void)
 	if (vm.stack == NULL)
 		exit(1);
 	vm.stack_top = vm.stack;
+	free_objects();
 	vm.objects = NULL;
 }
 
