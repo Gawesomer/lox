@@ -139,7 +139,7 @@ static int make_constant(enum OpCode op, enum OpCode op_long, Value value)
 		constant = add_constant(current_chunk(), value);
 		table_set(&identifiers, value, NUMBER_VAL(constant));
 	}
-	write_constant_op(current_chunk(), op, op_long, value, constant, parser.previous.line);
+	write_constant_op(current_chunk(), op, op_long, constant, parser.previous.line);
 
 	if (constant > 0xFFFFFF) {
 		error("Too many constants in one chunk.");
