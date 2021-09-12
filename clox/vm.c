@@ -42,11 +42,14 @@ void init_vm(void)
 	reset_stack();
 	vm.objects = NULL;
 	init_table(&vm.strings);
+	init_table(&vm.global_names);
+	init_value_array(&vm.global_values);
 }
 
 void free_vm(void)
 {
-	free_table(&vm.globals);
+	free_table(&vm.global_names);
+	free_value_array(&vm.global_values);
 	free_table(&vm.strings);
 	FREE_ARRAY(Value, vm.stack, vm.stack_capacity);
 	free_objects();
@@ -170,11 +173,11 @@ static enum InterpretResult run(void)
 			break;
 		case OP_GET_GLOBAL:
 		case OP_GET_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING((instruction == OP_GET_GLOBAL) ? read_constant() : read_constant_long());
-			Value value;
+			uint32_t index = (instruction == OP_GET_GLOBAL) ? read_byte() : read_long();
+			Value value = vm.global_values.values[index];
 
-			if (!table_get(&vm.globals, OBJ_VAL(name), &value)) {
-				runtime_error("Undefined variable name '%s'.", name->chars);
+			if (IS_UNDEFINED(value)) {
+				runtime_error("Undefined variable.");
 				return INTERPRET_RUNTIME_ERROR;
 			}
 			push(value);
@@ -182,21 +185,20 @@ static enum InterpretResult run(void)
 		}
 		case OP_DEFINE_GLOBAL:
 		case OP_DEFINE_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING((instruction == OP_DEFINE_GLOBAL) ? read_constant() : read_constant_long());
+			uint32_t index = (instruction == OP_DEFINE_GLOBAL) ? read_byte() : read_long();
 
-			table_set(&vm.globals, OBJ_VAL(name), peek(0));
-			pop();
+			vm.global_values.values[index] = pop();
 			break;
 		}
 		case OP_SET_GLOBAL:
 		case OP_SET_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING((instruction == OP_SET_GLOBAL) ? read_constant() : read_constant_long());
+			uint32_t index = (instruction == OP_SET_GLOBAL) ? read_byte() : read_long();
 
-			if (table_set(&vm.globals, OBJ_VAL(name), peek(0))) {
-				table_delete(&vm.globals, OBJ_VAL(name));
-				runtime_error("Undefined variable '%s'.", name->chars);
+			if (IS_UNDEFINED(vm.global_values.values[index])) {
+				runtime_error("Undefined variable.");
 				return INTERPRET_RUNTIME_ERROR;
 			}
+			vm.global_values.values[index] = peek(0);
 			break;
 		}
 		case OP_EQUAL: {

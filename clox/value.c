@@ -46,6 +46,9 @@ void print_value(Value value)
 	case VAL_OBJ:
 		print_object(value);
 		break;
+	case VAL_UNDEFINED:
+		printf("undefined");
+		break;
 	}
 }
 

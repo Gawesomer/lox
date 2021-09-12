@@ -154,6 +154,26 @@ static void emit_constant(enum OpCode op, enum OpCode op_long, Value value)
 	make_constant(op, op_long, value);
 }
 
+static void make_global(enum OpCode op, enum OpCode op_long, Value name)
+{
+	Value index;
+
+	if (!table_get(&vm.global_names, name, &index)) {
+		index = NUMBER_VAL(vm.global_values.count);
+		write_value_array(&vm.global_values, UNDEFINED_VAL);
+		table_set(&vm.global_names, name, index);
+	}
+	write_constant_op(current_chunk(), op, op_long, AS_NUMBER(index), parser.previous.line);
+
+	if (AS_NUMBER(index) > 0xFFFFFF)
+		error("Too many globals in one chunk.");
+}
+
+static void emit_global(enum OpCode op, enum OpCode op_long, Value name)
+{
+	make_global(op, op_long, name);
+}
+
 static void end_compiler(void)
 {
 	emit_return();
@@ -182,7 +202,7 @@ static Value parse_variable(const char *error_message)
 
 static void define_variable(Value global)
 {
-	emit_constant(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
+	emit_global(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
 }
 
 static void binary(bool can_assign)
@@ -279,9 +299,9 @@ static void named_variable(struct Token name, bool can_assign)
 
 	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
-		emit_constant(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, variable);
+		emit_global(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, variable);
 	} else {
-		emit_constant(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, variable);
+		emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, variable);
 	}
 }
 

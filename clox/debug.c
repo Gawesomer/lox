@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "line.h"
 #include "value.h"
+#include "vm.h"
 
 void disassemble_chunk(struct Chunk *chunk, const char *name)
 {
@@ -33,6 +34,31 @@ static int constant_long_instruction(const char *name, struct Chunk *chunk, int 
 
 	printf("%-16s %4d '", name, constant);
 	print_value(chunk->constants.values[constant]);
+	printf("'\n");
+	return offset + 4;
+}
+
+static int global_instruction(const char *name, struct Chunk *chunk, int offset)
+{
+	uint8_t index = chunk->code[offset + 1];
+
+	printf("%-16s %4d '", name, index);
+	print_value(vm.global_values.values[index]);
+	printf("'\n");
+	return offset + 2;
+}
+
+static int global_long_instruction(const char *name, struct Chunk *chunk, int offset)
+{
+	uint32_t index = 0;
+
+	for (int i = 1; i <= 3; i++) {
+		index <<= 8;
+		index += chunk->code[offset + i];
+	}
+
+	printf("%-16s %4d '", name, index);
+	print_value(vm.global_values.values[index]);
 	printf("'\n");
 	return offset + 4;
 }
@@ -70,17 +96,17 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 	case OP_POP:
 		return simple_instruction("OP_POP", offset);
 	case OP_GET_GLOBAL:
-		return constant_instruction("OP_GET_GLOBAL", chunk, offset);
+		return global_instruction("OP_GET_GLOBAL", chunk, offset);
 	case OP_GET_GLOBAL_LONG:
-		return constant_instruction("OP_GET_GLOBAL_LONG", chunk, offset);
+		return global_instruction("OP_GET_GLOBAL_LONG", chunk, offset);
 	case OP_DEFINE_GLOBAL:
-		return constant_instruction("OP_DEFINE_GLOBAL", chunk, offset);
+		return global_instruction("OP_DEFINE_GLOBAL", chunk, offset);
 	case OP_DEFINE_GLOBAL_LONG:
-		return constant_long_instruction("OP_DEFINE_GLOBAL_LONG", chunk, offset);
+		return global_long_instruction("OP_DEFINE_GLOBAL_LONG", chunk, offset);
 	case OP_SET_GLOBAL:
-		return constant_instruction("OP_SET_GLOBAL", chunk, offset);
+		return global_instruction("OP_SET_GLOBAL", chunk, offset);
 	case OP_SET_GLOBAL_LONG:
-		return constant_long_instruction("OP_SET_GLOBAL_LONG", chunk, offset);
+		return global_long_instruction("OP_SET_GLOBAL_LONG", chunk, offset);
 	case OP_EQUAL:
 		return simple_instruction("OP_EQUAL", offset);
 	case OP_GREATER:
