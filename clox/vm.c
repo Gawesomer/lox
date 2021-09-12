@@ -95,22 +95,35 @@ static void concatenate(void)
 	push(OBJ_VAL(result));
 }
 
-static Value READ_CONSTANT_LONG(void)
+static uint8_t read_byte(void)
+{
+	return *vm.ip++;
+}
+
+static uint32_t read_long(void)
 {
 	uint32_t offset = 0;
 
 	for (int i = 0; i < 3; i++) {
 		offset <<= 8;
-		offset += *vm.ip++;  // READ_BYTE()
+		offset += read_byte();
 	}
 
-	return vm.chunk->constants.values[offset];
+	return offset;
+}
+
+static Value read_constant(void)
+{
+	return vm.chunk->constants.values[read_byte()];
+}
+
+static Value read_constant_long(void)
+{
+	return vm.chunk->constants.values[read_long()];
 }
 
 static enum InterpretResult run(void)
 {
-#define READ_BYTE() (*vm.ip++)
-#define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
 #define BINARY_OP(value_type,  op) \
 	do { \
 		if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -136,13 +149,13 @@ static enum InterpretResult run(void)
 		uint8_t instruction;
 		Value constant;
 
-		switch (instruction = READ_BYTE()) {
+		switch (instruction = read_byte()) {
 		case OP_CONSTANT:
-			constant = READ_CONSTANT();
+			constant = read_constant();
 			push(constant);
 			break;
 		case OP_CONSTANT_LONG:
-			constant = READ_CONSTANT_LONG();
+			constant = read_constant_long();
 			push(constant);
 			break;
 		case OP_NIL:
@@ -157,19 +170,9 @@ static enum InterpretResult run(void)
 		case OP_POP:
 			pop();
 			break;
-		case OP_GET_GLOBAL: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT());
-			Value value;
-
-			if (!table_get(&vm.globals, OBJ_VAL(name), &value)) {
-				runtime_error("Undefined variable name '%s'.", name->ptr);
-				return INTERPRET_RUNTIME_ERROR;
-			}
-			push(value);
-			break;
-		}
+		case OP_GET_GLOBAL:
 		case OP_GET_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
+			struct ObjString *name = AS_STRING((instruction == OP_GET_GLOBAL) ? read_constant() : read_constant_long());
 			Value value;
 
 			if (!table_get(&vm.globals, OBJ_VAL(name), &value)) {
@@ -179,32 +182,17 @@ static enum InterpretResult run(void)
 			push(value);
 			break;
 		}
-		case OP_DEFINE_GLOBAL: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT());
-
-			table_set(&vm.globals, OBJ_VAL(name), peek(0));
-			pop();
-			break;
-		}
+		case OP_DEFINE_GLOBAL:
 		case OP_DEFINE_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
+			struct ObjString *name = AS_STRING((instruction == OP_DEFINE_GLOBAL) ? read_constant() : read_constant_long());
 
 			table_set(&vm.globals, OBJ_VAL(name), peek(0));
 			pop();
 			break;
 		}
-		case OP_SET_GLOBAL: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT());
-
-			if (table_set(&vm.globals, OBJ_VAL(name), peek(0))) {
-				table_delete(&vm.globals, OBJ_VAL(name));
-				runtime_error("Undefined variable '%s'.", name->ptr);
-				return INTERPRET_RUNTIME_ERROR;
-			}
-			break;
-		}
+		case OP_SET_GLOBAL:
 		case OP_SET_GLOBAL_LONG: {
-			struct ObjString *name = AS_STRING(READ_CONSTANT_LONG());
+			struct ObjString *name = AS_STRING((instruction == OP_SET_GLOBAL) ? read_constant() : read_constant_long());
 
 			if (table_set(&vm.globals, OBJ_VAL(name), peek(0))) {
 				table_delete(&vm.globals, OBJ_VAL(name));
@@ -269,8 +257,6 @@ static enum InterpretResult run(void)
 		}
 	}
 
-#undef READ_BYTE
-#undef READ_CONSTANT
 #undef BINARY_OP
 }
 
