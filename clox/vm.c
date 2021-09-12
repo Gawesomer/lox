@@ -19,8 +19,6 @@ static void reset_stack(void)
 	if (vm.stack == NULL)
 		exit(1);
 	vm.stack_top = vm.stack;
-	free_objects();
-	vm.objects = NULL;
 }
 
 static void runtime_error(const char *format, ...)
@@ -176,7 +174,7 @@ static enum InterpretResult run(void)
 			Value value;
 
 			if (!table_get(&vm.globals, OBJ_VAL(name), &value)) {
-				runtime_error("Undefined variable name '%s'.", name->ptr);
+				runtime_error("Undefined variable name '%s'.", name->chars);
 				return INTERPRET_RUNTIME_ERROR;
 			}
 			push(value);
@@ -196,7 +194,7 @@ static enum InterpretResult run(void)
 
 			if (table_set(&vm.globals, OBJ_VAL(name), peek(0))) {
 				table_delete(&vm.globals, OBJ_VAL(name));
-				runtime_error("Undefined variable '%s'.", name->ptr);
+				runtime_error("Undefined variable '%s'.", name->chars);
 				return INTERPRET_RUNTIME_ERROR;
 			}
 			break;

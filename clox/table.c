@@ -179,9 +179,7 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 			struct ObjString *key_str = AS_STRING(entry->key);
 
 			if (key_str->length == length && key_str->hash == hash) {
-				const char *key_chars = (key_str->ptr == NULL) ? key_str->chars : key_str->ptr;
-
-				if (memcmp(key_chars, chars, length) == 0)
+				if (memcmp(key_str->chars, chars, length) == 0)
 					return key_str;  // We found it.
 			}
 		}

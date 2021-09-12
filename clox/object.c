@@ -21,7 +21,7 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
-struct ObjString *const_string(const char *chars, int length)
+struct ObjString *copy_string(const char *chars, int length)
 {
 	uint32_t hash = hash_bytes((const uint8_t *)chars, length);
 	struct ObjString *interned = table_find_string(&vm.strings, chars, length, hash);
@@ -29,9 +29,11 @@ struct ObjString *const_string(const char *chars, int length)
 	if (interned != NULL)
 		return interned;
 
-	struct ObjString *string = ALLOCATE_OBJ(struct ObjString, OBJ_STRING);
+	struct ObjString *string = (struct ObjString *)allocate_object(
+					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
 
-	string->ptr = chars;
+	memcpy(string->chars, chars, length);
+	string->chars[length] = '\0';
 	string->length = length;
 	string->hash = hash;
 	table_set(&vm.strings, OBJ_VAL(string), NIL_VAL);
@@ -42,13 +44,11 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 {
 	int length = a->length + b->length;
 	struct ObjString *string = (struct ObjString *)allocate_object(
-					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length), OBJ_STRING);
-	const char *a_chars = (a->ptr == NULL) ? a->chars : a->ptr;
-	const char *b_chars = (b->ptr == NULL) ? b->chars : b->ptr;
+					FLEX_ARR_STRUCT_SIZE(struct ObjString, char, length + 1), OBJ_STRING);
 
-	memcpy(string->chars, a_chars, a->length);
-	memcpy(string->chars + a->length, b_chars, b->length);
-	string->ptr = NULL;
+	memcpy(string->chars, a->chars, a->length);
+	memcpy(string->chars + a->length, b->chars, b->length);
+	string->chars[length] = '\0';
 	string->length = length;
 
 	uint32_t hash = hash_bytes((const uint8_t *)string->chars, string->length);
@@ -56,7 +56,7 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 
 	if (interned != NULL) {
 		vm.objects = string->obj.next;  // Make sure to remove from VM's object list since unused.
-		FREE_SIZE(string, FLEX_ARR_STRUCT_SIZE(struct ObjString, char, string->length));
+		FREE_SIZE(string, FLEX_ARR_STRUCT_SIZE(struct ObjString, char, string->length + 1));
 		return interned;
 	}
 
@@ -69,10 +69,7 @@ void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
 	case OBJ_STRING: {
-		struct ObjString *string = AS_STRING(value);
-		const char *chars = (string->ptr == NULL) ? string->chars : string->ptr;
-
-		printf("%.*s", string->length, chars);
+		printf("%s", AS_CSTRING(value));
 		break;
 	}
 	}

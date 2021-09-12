@@ -171,7 +171,7 @@ static void parse_precedence(enum Precedence precedence);
 
 static Value identifier_constant(struct Token *name)
 {
-	return OBJ_VAL(const_string(name->start, name->length));
+	return OBJ_VAL(copy_string(name->start, name->length));
 }
 
 static Value parse_variable(const char *error_message)
@@ -270,7 +270,7 @@ static void number(bool can_assign)
 
 static void string(bool can_assign)
 {
-	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, OBJ_VAL(const_string(parser.previous.start + 1, parser.previous.length - 2)));
+	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, OBJ_VAL(copy_string(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
 static void named_variable(struct Token name, bool can_assign)
