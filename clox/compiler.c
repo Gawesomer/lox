@@ -211,6 +211,11 @@ static void begin_scope(void)
 static void end_scope(void)
 {
 	current->scope_depth--;
+
+	while (current->local_count > 0 && current->locals[current->local_count - 1].depth > current->scope_depth) {
+		emit_byte(OP_POP);
+		current->local_count--;
+	}
 }
 
 static void expression(void);
