@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "compiler.h"
@@ -223,8 +224,21 @@ static Value identifier_constant(struct Token *name)
 	return OBJ_VAL(copy_string(name->start, name->length));
 }
 
+static bool identifiers_equal(struct Token *a, struct Token *b)
+{
+	if (a->length != b->length)
+		return false;
+
+	return memcmp(a->start, b->start, a->length) == 0;
+}
+
 static void add_local(struct Token name)
 {
+	if (current->local_count == UINT8_COUNT) {
+		error("Too many local variables.");
+		return;
+	}
+
 	struct Local *local = &current->locals[current->local_count++];
 
 	local->name = name;
@@ -237,6 +251,16 @@ static void declare_variable(void)
 		return;
 
 	struct Token *name = &parser.previous;
+
+	for (int i = current->local_count - 1; i >= 0; i--) {
+		struct Local *local = &current->locals[i];
+
+		if (local->depth != -1 && local->depth < current->scope_depth)
+			break;
+
+		if (identifiers_equal(name, &local->name))
+			error("Already a variable with this name in this scope.");
+	}
 
 	add_local(*name);
 }
