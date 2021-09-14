@@ -202,6 +202,16 @@ static void end_compiler(void)
 #endif
 }
 
+static void begin_scope(void)
+{
+	current->scope_depth++;
+}
+
+static void end_scope(void)
+{
+	current->scope_depth--;
+}
+
 static void expression(void);
 static void statement(void);
 static void declaration(void);
@@ -213,14 +223,38 @@ static Value identifier_constant(struct Token *name)
 	return OBJ_VAL(copy_string(name->start, name->length));
 }
 
+static void add_local(struct Token name)
+{
+	struct Local *local = &current->locals[current->local_count++];
+
+	local->name = name;
+	local->depth = current->scope_depth;
+}
+
+static void declare_variable(void)
+{
+	if (current->scope_depth == 0)
+		return;
+
+	struct Token *name = &parser.previous;
+
+	add_local(*name);
+}
+
 static Value parse_variable(const char *error_message)
 {
 	consume(TOKEN_IDENTIFIER, error_message);
+
+	declare_variable();
+
 	return identifier_constant(&parser.previous);
 }
 
 static void define_variable(Value global)
 {
+	if (current->scope_depth > 0)
+		return;
+
 	emit_global(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
 }
 
@@ -429,9 +463,18 @@ static void expression(void)
 	parse_precedence(PREC_ASSIGNMENT);
 }
 
+static void block(void)
+{
+	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+	       declaration();
+	}
+
+	consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
 static void var_declaration(void)
 {
-	Value global = parse_variable("Expect variable name.");
+	Value name  = parse_variable("Expect variable name.");
 
 	if (match(TOKEN_EQUAL))
 		expression();
@@ -440,7 +483,7 @@ static void var_declaration(void)
 
 	consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
-	define_variable(global);
+	define_variable(name);
 }
 
 static void expression_statement(void)
@@ -496,10 +539,15 @@ static void declaration(void)
 
 static void statement(void)
 {
-	if (match(TOKEN_PRINT))
+	if (match(TOKEN_PRINT)) {
 		print_statement();
-	else
+	} else if (match(TOKEN_LEFT_BRACE)) {
+		begin_scope();
+		block();
+		end_scope();
+	} else {
 		expression_statement();
+	}
 }
 
 bool compile(const char *source, struct Chunk *chunk)
