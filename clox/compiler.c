@@ -38,7 +38,19 @@ struct ParseRule {
 	enum Precedence precedence;
 };
 
+struct Local {
+	struct Token name;
+	int depth;
+};
+
+struct Compiler {
+	struct Local locals[UINT8_COUNT];
+	int local_count;
+	int scope_depth;
+};
+
 struct Parser parser;
+struct Compiler *current = NULL;
 struct Chunk *compiling_chunk;
 struct Table identifiers;
 
@@ -172,6 +184,13 @@ static void make_global(enum OpCode op, enum OpCode op_long, Value name)
 static void emit_global(enum OpCode op, enum OpCode op_long, Value name)
 {
 	make_global(op, op_long, name);
+}
+
+static void init_compiler(struct Compiler *compiler)
+{
+	compiler->local_count = 0;
+	compiler->scope_depth = 0;
+	current = compiler;
 }
 
 static void end_compiler(void)
@@ -487,6 +506,10 @@ bool compile(const char *source, struct Chunk *chunk)
 {
 	init_scanner(source);
 	init_table(&identifiers);
+
+	struct Compiler compiler;
+
+	init_compiler(&compiler);
 	compiling_chunk = chunk;
 
 	parser.had_error = false;
