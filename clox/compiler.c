@@ -237,6 +237,18 @@ static bool identifiers_equal(struct Token *a, struct Token *b)
 	return memcmp(a->start, b->start, a->length) == 0;
 }
 
+static int resolve_local(struct Compiler *compiler, struct Token *name)
+{
+	for (int i = compiler->local_count - 1; i >= 0; i--) {
+		struct Local *local = &compiler->locals[i];
+
+		if (identifiers_equal(name, &local->name))
+			return i;
+	}
+
+	return -1;
+}
+
 static void add_local(struct Token name)
 {
 	if (current->local_count == UINT8_COUNT) {
@@ -377,13 +389,23 @@ static void string(bool can_assign)
 
 static void named_variable(struct Token name, bool can_assign)
 {
-	Value variable = identifier_constant(&name);
+	int local_index = resolve_local(current, &name);
+	Value global;
+
+	if (local_index == -1)
+		global = identifier_constant(&name);
 
 	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
-		emit_global(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, variable);
+		if (local_index == -1)
+			emit_global(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, global);
+		else
+			emit_bytes(OP_SET_LOCAL, local_index);
 	} else {
-		emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, variable);
+		if (local_index == -1)
+			emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, global);
+		else
+			emit_bytes(OP_GET_LOCAL, local_index);
 	}
 }
 

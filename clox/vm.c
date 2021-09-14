@@ -171,6 +171,18 @@ static enum InterpretResult run(void)
 		case OP_POP:
 			pop();
 			break;
+		case OP_GET_LOCAL: {
+			uint8_t slot = read_byte();
+
+			push(vm.stack[slot]);
+			break;
+		}
+		case OP_SET_LOCAL: {
+			uint8_t slot = read_byte();
+
+			vm.stack[slot] = peek(0);
+			break;
+		}
 		case OP_GET_GLOBAL:
 		case OP_GET_GLOBAL_LONG: {
 			uint32_t index = (instruction == OP_GET_GLOBAL) ? read_byte() : read_long();
