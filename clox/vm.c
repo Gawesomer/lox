@@ -42,6 +42,7 @@ void init_vm(void)
 	reset_stack();
 	vm.objects = NULL;
 	init_table(&vm.strings);
+	init_table(&vm.global_immutables);
 	init_table(&vm.global_names);
 	init_value_array(&vm.global_values);
 }
@@ -50,6 +51,7 @@ void free_vm(void)
 {
 	free_table(&vm.global_names);
 	free_value_array(&vm.global_values);
+	free_table(&vm.global_immutables);
 	free_table(&vm.strings);
 	FREE_ARRAY(Value, vm.stack, vm.stack_capacity);
 	free_objects();

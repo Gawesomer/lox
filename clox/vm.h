@@ -13,6 +13,7 @@ struct VM {
 	Value *stack;
 	Value *stack_top;
 	int stack_capacity;
+	struct Table global_immutables;
 	struct Table global_names;
 	struct ValueArray global_values;
 	struct Table strings;

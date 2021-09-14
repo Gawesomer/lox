@@ -42,6 +42,7 @@ struct ParseRule {
 struct Local {
 	struct Token name;
 	int depth;
+	bool is_immutable;
 };
 
 struct Compiler {
@@ -252,7 +253,7 @@ static int resolve_local(struct Compiler *compiler, struct Token *name)
 	return -1;
 }
 
-static void add_local(struct Token name)
+static void add_local(struct Token name, bool is_immutable)
 {
 	if (current->local_count == UINT8_COUNT) {
 		error("Too many local variables.");
@@ -263,9 +264,10 @@ static void add_local(struct Token name)
 
 	local->name = name;
 	local->depth = -1;
+	local->is_immutable = is_immutable;
 }
 
-static void declare_variable(void)
+static void declare_variable(bool is_immutable)
 {
 	if (current->scope_depth == 0)
 		return;
@@ -282,14 +284,14 @@ static void declare_variable(void)
 			error("Already a variable with this name in this scope.");
 	}
 
-	add_local(*name);
+	add_local(*name, is_immutable);
 }
 
-static Value parse_variable(const char *error_message)
+static Value parse_variable(bool is_immutable, const char *error_message)
 {
 	consume(TOKEN_IDENTIFIER, error_message);
 
-	declare_variable();
+	declare_variable(is_immutable);
 
 	return identifier_constant(&parser.previous);
 }
@@ -299,12 +301,15 @@ static void mark_initialized(void)
 	current->locals[current->local_count - 1].depth = current->scope_depth;
 }
 
-static void define_variable(Value global)
+static void define_variable(Value global, bool is_immutable)
 {
 	if (current->scope_depth > 0) {
 		mark_initialized();
 		return;
 	}
+
+	if (is_immutable)
+		table_set(&vm.global_immutables, global, NIL_VAL);
 
 	emit_global(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
 }
@@ -407,10 +412,18 @@ static void named_variable(struct Token name, bool can_assign)
 
 	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
-		if (local_index == -1)
-			emit_global(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, global);
-		else
+		if (local_index == -1) {
+			Value get_res;
+
+			if (!table_get(&vm.global_immutables, global, &get_res))
+				emit_global(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, global);
+			else
+				error("Can't assign to immutable variable.");
+		} else {
+			if (current->locals[local_index].is_immutable)
+				error("Can't assign to immutable variable.");
 			emit_bytes(OP_SET_LOCAL, local_index);
+		}
 	} else {
 		if (local_index == -1)
 			emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, global);
@@ -533,9 +546,13 @@ static void block(void)
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
-static void var_declaration(void)
+static void var_declaration(bool is_immutable)
 {
-	Value name  = parse_variable("Expect variable name.");
+	Value name  = parse_variable(is_immutable, "Expect variable name.");
+	Value get_res;
+
+	if (current->scope_depth == 0 && table_get(&vm.global_immutables, name, &get_res))
+		error("Cannot redefine immutable variable.");
 
 	if (match(TOKEN_EQUAL))
 		expression();
@@ -544,7 +561,7 @@ static void var_declaration(void)
 
 	consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 
-	define_variable(name);
+	define_variable(name, is_immutable);
 }
 
 static void expression_statement(void)
@@ -590,7 +607,9 @@ static void synchronize(void)
 static void declaration(void)
 {
 	if (match(TOKEN_VAR))
-		var_declaration();
+		var_declaration(false);
+	else if (match(TOKEN_IMMUT))
+		var_declaration(true);
 	else
 		statement();
 
