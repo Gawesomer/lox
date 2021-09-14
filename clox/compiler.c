@@ -242,8 +242,11 @@ static int resolve_local(struct Compiler *compiler, struct Token *name)
 	for (int i = compiler->local_count - 1; i >= 0; i--) {
 		struct Local *local = &compiler->locals[i];
 
-		if (identifiers_equal(name, &local->name))
+		if (identifiers_equal(name, &local->name)) {
+			if (local->depth == -1)
+				error("Can't read local variable in its own initializer.");
 			return i;
+		}
 	}
 
 	return -1;
@@ -259,7 +262,7 @@ static void add_local(struct Token name)
 	struct Local *local = &current->locals[current->local_count++];
 
 	local->name = name;
-	local->depth = current->scope_depth;
+	local->depth = -1;
 }
 
 static void declare_variable(void)
@@ -291,10 +294,17 @@ static Value parse_variable(const char *error_message)
 	return identifier_constant(&parser.previous);
 }
 
+static void mark_initialized(void)
+{
+	current->locals[current->local_count - 1].depth = current->scope_depth;
+}
+
 static void define_variable(Value global)
 {
-	if (current->scope_depth > 0)
+	if (current->scope_depth > 0) {
+		mark_initialized();
 		return;
+	}
 
 	emit_global(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
 }
