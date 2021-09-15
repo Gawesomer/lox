@@ -103,6 +103,12 @@ static uint8_t read_byte(void)
 	return *vm.ip++;
 }
 
+static uint16_t read_short(void)
+{
+	vm.ip += 2;
+	return ((vm.ip[-2] << 8) | vm.ip[-1]);
+}
+
 static uint32_t read_long(void)
 {
 	uint32_t offset = 0;
@@ -267,6 +273,19 @@ static enum InterpretResult run(void)
 			print_value(pop());
 			printf("\n");
 			break;
+		case OP_JUMP: {
+			uint16_t offset = read_short();
+
+			vm.ip += offset;
+			break;
+		}
+		case OP_JUMP_IF_FALSE: {
+			uint16_t offset = read_short();
+
+			if (is_falsey(peek(0)))
+				vm.ip += offset;
+			break;
+		}
 		case OP_RETURN:
 			// Exit interpreter.
 			return INTERPRET_OK;
