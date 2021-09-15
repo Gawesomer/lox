@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "compiler.h"
+#include "memory.h"
 #include "scanner.h"
 #include "table.h"
 
@@ -45,10 +46,15 @@ struct Local {
 	bool is_immutable;
 };
 
+struct LocalArray {
+	int count;
+	int capacity;
+	struct Local *locals;
+};
+
 struct Compiler {
-	struct Local locals[UINT8_COUNT];
-	int local_count;
 	int scope_depth;
+	struct LocalArray local_vars;
 };
 
 struct Parser parser;
@@ -59,6 +65,32 @@ struct Table identifiers;
 static struct Chunk *current_chunk(void)
 {
 	return compiling_chunk;
+}
+
+static void init_local_array(struct LocalArray *array)
+{
+	array->count = 0;
+	array->capacity = 0;
+	array->locals = NULL;
+}
+
+static void free_local_array(struct LocalArray *array)
+{
+	FREE_ARRAY(struct Local, array->locals, array->capacity);
+	init_local_array(array);
+}
+
+static void write_local_array(struct LocalArray *array, struct Local local)
+{
+	if (array->capacity < array->count + 1) {
+		int old_capacity = array->capacity;
+
+		array->capacity = GROW_CAPACITY(old_capacity);
+		array->locals = GROW_ARRAY(struct Local, array->locals, old_capacity, array->capacity);
+	}
+
+	array->locals[array->count] = local;
+	array->count++;
 }
 
 static void error_at(struct Token *token, const char *message)
@@ -190,7 +222,7 @@ static void emit_global(enum OpCode op, enum OpCode op_long, Value name)
 
 static void init_compiler(struct Compiler *compiler)
 {
-	compiler->local_count = 0;
+	init_local_array(&compiler->local_vars);
 	compiler->scope_depth = 0;
 	current = compiler;
 }
@@ -198,6 +230,7 @@ static void init_compiler(struct Compiler *compiler)
 static void end_compiler(void)
 {
 	emit_return();
+	free_local_array(&current->local_vars);
 #ifdef DEBUG_PRINT_CODE
 	if (!parser.had_error)
 		disassemble_chunk(current_chunk(), "code");
@@ -213,9 +246,11 @@ static void end_scope(void)
 {
 	current->scope_depth--;
 
-	while (current->local_count > 0 && current->locals[current->local_count - 1].depth > current->scope_depth) {
+	while (current->local_vars.count > 0 && \
+	       current->local_vars.locals[current->local_vars.count - 1].depth \
+			> current->scope_depth) {
 		emit_byte(OP_POP);
-		current->local_count--;
+		current->local_vars.count--;
 	}
 }
 
@@ -240,8 +275,8 @@ static bool identifiers_equal(struct Token *a, struct Token *b)
 
 static int resolve_local(struct Compiler *compiler, struct Token *name)
 {
-	for (int i = compiler->local_count - 1; i >= 0; i--) {
-		struct Local *local = &compiler->locals[i];
+	for (int i = compiler->local_vars.count - 1; i >= 0; i--) {
+		struct Local *local = &compiler->local_vars.locals[i];
 
 		if (identifiers_equal(name, &local->name)) {
 			if (local->depth == -1)
@@ -255,16 +290,13 @@ static int resolve_local(struct Compiler *compiler, struct Token *name)
 
 static void add_local(struct Token name, bool is_immutable)
 {
-	if (current->local_count == UINT8_COUNT) {
+	if (current->local_vars.count == UINT24_COUNT) {
 		error("Too many local variables.");
 		return;
 	}
 
-	struct Local *local = &current->locals[current->local_count++];
-
-	local->name = name;
-	local->depth = -1;
-	local->is_immutable = is_immutable;
+	write_local_array(&current->local_vars, \
+			  (struct Local){.name = name, .depth = -1, .is_immutable = is_immutable});
 }
 
 static void declare_variable(bool is_immutable)
@@ -274,8 +306,8 @@ static void declare_variable(bool is_immutable)
 
 	struct Token *name = &parser.previous;
 
-	for (int i = current->local_count - 1; i >= 0; i--) {
-		struct Local *local = &current->locals[i];
+	for (int i = current->local_vars.count - 1; i >= 0; i--) {
+		struct Local *local = &current->local_vars.locals[i];
 
 		if (local->depth != -1 && local->depth < current->scope_depth)
 			break;
@@ -298,7 +330,7 @@ static Value parse_variable(bool is_immutable, const char *error_message)
 
 static void mark_initialized(void)
 {
-	current->locals[current->local_count - 1].depth = current->scope_depth;
+	current->local_vars.locals[current->local_vars.count - 1].depth = current->scope_depth;
 }
 
 static void define_variable(Value global, bool is_immutable)
@@ -420,15 +452,17 @@ static void named_variable(struct Token name, bool can_assign)
 			else
 				error("Can't assign to immutable variable.");
 		} else {
-			if (current->locals[local_index].is_immutable)
+			if (current->local_vars.locals[local_index].is_immutable)
 				error("Can't assign to immutable variable.");
-			emit_bytes(OP_SET_LOCAL, local_index);
+			write_constant_op(current_chunk(), OP_SET_LOCAL, OP_SET_LOCAL_LONG, \
+					  local_index, parser.previous.line);
 		}
 	} else {
 		if (local_index == -1)
 			emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, global);
 		else
-			emit_bytes(OP_GET_LOCAL, local_index);
+			write_constant_op(current_chunk(), OP_GET_LOCAL, OP_GET_LOCAL_LONG, \
+					  local_index, parser.previous.line);
 	}
 }
 
