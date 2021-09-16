@@ -366,6 +366,16 @@ static void define_variable(Value global, bool is_immutable)
 	emit_global(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
 }
 
+static void and_(bool can_assign)
+{
+	int end_jump = emit_jump(OP_JUMP_IF_FALSE);
+
+	emit_byte(OP_POP);
+	parse_precedence(PREC_AND);
+
+	patch_jump(end_jump);
+}
+
 static void binary(bool can_assign)
 {
 	enum TokenType operator_type = parser.previous.type;
@@ -447,6 +457,18 @@ static void number(bool can_assign)
 	double value = strtod(parser.previous.start, NULL);
 
 	emit_constant(OP_CONSTANT, OP_CONSTANT_LONG, NUMBER_VAL(value));
+}
+
+static void or_(bool can_assign)
+{
+	int else_jump = emit_jump(OP_JUMP_IF_FALSE);
+	int end_jump = emit_jump(OP_JUMP);
+
+	patch_jump(else_jump);
+	emit_byte(OP_POP);
+
+	parse_precedence(PREC_OR);
+	patch_jump(end_jump);
 }
 
 static void string(bool can_assign)
@@ -536,7 +558,7 @@ struct ParseRule rules[] = {
 	[TOKEN_IDENTIFIER]    = {variable, NULL,    PREC_NONE},
 	[TOKEN_STRING]        = {string,   NULL,    PREC_NONE},
 	[TOKEN_NUMBER]        = {number,   NULL,    PREC_NONE},
-	[TOKEN_AND]           = {NULL,     NULL,    PREC_NONE},
+	[TOKEN_AND]           = {NULL,     and_,    PREC_AND},
 	[TOKEN_CLASS]         = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_ELSE]          = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_FALSE]         = {literal,  NULL,    PREC_NONE},
@@ -544,7 +566,7 @@ struct ParseRule rules[] = {
 	[TOKEN_FUN]           = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_IF]            = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_NIL]           = {literal,  NULL,    PREC_NONE},
-	[TOKEN_OR]            = {NULL,     NULL,    PREC_NONE},
+	[TOKEN_OR]            = {NULL,     or_,     PREC_OR},
 	[TOKEN_PRINT]         = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_RETURN]        = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_SUPER]         = {NULL,     NULL,    PREC_NONE},
