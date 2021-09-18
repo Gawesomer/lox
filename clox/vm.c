@@ -223,6 +223,13 @@ static enum InterpretResult run(void)
 			vm.global_values.values[index] = peek(0);
 			break;
 		}
+		case OP_CASE_EQUAL: {
+			Value case_val = pop();
+			Value switch_val = peek(0);
+
+			push(BOOL_VAL(values_equal(switch_val, case_val)));
+			break;
+		}
 		case OP_EQUAL: {
 			Value b = pop();
 			Value a = pop();

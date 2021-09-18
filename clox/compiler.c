@@ -754,6 +754,46 @@ static void while_statement(void)
 	emit_byte(OP_POP);
 }
 
+static void switch_statement(void)
+{
+	consume(TOKEN_LEFT_PAREN, "Expect '(' after 'switch'.");
+	expression();
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+	int exit_jumps[MAX_CASE_COUNT];
+	int case_count = 0;
+
+	consume(TOKEN_LEFT_BRACE, "Expect '{' at beginning of switch body.");
+	while (match(TOKEN_CASE)) {
+		if (case_count >= MAX_CASE_COUNT) {
+			error("Too many switch-cases.");
+			return;
+		}
+		expression();
+		consume(TOKEN_COLON, "Expect ':' after switch-case.");
+
+		emit_byte(OP_CASE_EQUAL);
+		int case_jump = emit_jump(OP_JUMP_IF_FALSE);
+
+		emit_byte(OP_POP);
+		statement();
+		exit_jumps[case_count++] = emit_jump(OP_JUMP);
+
+		patch_jump(case_jump);
+		emit_byte(OP_POP);
+	}
+	if (match(TOKEN_DEFAULT)) {
+		consume(TOKEN_COLON, "Expect ':' after default switch-case.");
+
+		statement();
+	}
+	consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body.");
+
+	for (int i = 0; i < case_count; i++)
+		patch_jump(exit_jumps[i]);
+	emit_byte(OP_POP);  // Remove switch value.
+}
+
 static void synchronize(void)
 {
 	parser.panic_mode = false;
@@ -803,6 +843,8 @@ static void statement(void)
 		if_statement();
 	} else if (match(TOKEN_WHILE)) {
 		while_statement();
+	} else if (match(TOKEN_SWITCH)) {
+		switch_statement();
 	} else if (match(TOKEN_LEFT_BRACE)) {
 		begin_scope();
 		block();

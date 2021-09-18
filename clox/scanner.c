@@ -143,7 +143,17 @@ static enum TokenType identifier_type(void)
 	case 'a':
 		return check_keyword(1, 2, "nd", TOKEN_AND);
 	case 'c':
-		return check_keyword(1, 4, "lass", TOKEN_CLASS);
+		if (scanner.current - scanner.start > 1) {
+			switch (scanner.start[1]) {
+			case 'a':
+				return check_keyword(2, 2, "se", TOKEN_CASE);
+			case 'l':
+				return check_keyword(2, 3, "ass", TOKEN_CLASS);
+			}
+		}
+		break;
+	case 'd':
+		return check_keyword(1, 6, "efault", TOKEN_DEFAULT);
 	case 'e':
 		return check_keyword(1, 3, "lse", TOKEN_ELSE);
 	case 'f':
@@ -176,7 +186,14 @@ static enum TokenType identifier_type(void)
 	case 'r':
 		return check_keyword(1, 5, "eturn", TOKEN_RETURN);
 	case 's':
-		return check_keyword(1, 4, "uper", TOKEN_SUPER);
+		if (scanner.current - scanner.start > 1) {
+			switch (scanner.start[1]) {
+			case 'u':
+				return check_keyword(2, 3, "per", TOKEN_SUPER);
+			case 'w':
+				return check_keyword(2, 4, "itch", TOKEN_SWITCH);
+			}
+		}
 	case 't':
 		if (scanner.current - scanner.start > 1) {
 			switch (scanner.start[1]) {
