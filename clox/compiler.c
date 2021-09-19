@@ -55,6 +55,8 @@ struct LocalArray {
 struct Compiler {
 	int scope_depth;
 	struct LocalArray local_vars;
+	int curr_loop;
+	int curr_loop_depth;
 };
 
 struct Parser parser;
@@ -257,6 +259,8 @@ static void init_compiler(struct Compiler *compiler)
 {
 	init_local_array(&compiler->local_vars);
 	compiler->scope_depth = 0;
+	compiler->curr_loop = -1;
+	compiler->curr_loop_depth = 0;
 	current = compiler;
 }
 
@@ -738,7 +742,12 @@ static void print_statement(void)
 
 static void while_statement(void)
 {
+	int prev_loop = current->curr_loop;
+	int prev_loop_depth = current->curr_loop_depth;
 	int loop_start = current_chunk()->count;
+
+	current->curr_loop = loop_start;
+	current->curr_loop_depth = current->scope_depth;
 
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
 	expression();
@@ -752,6 +761,20 @@ static void while_statement(void)
 
 	patch_jump(exit_jump);
 	emit_byte(OP_POP);
+
+	current->curr_loop = prev_loop;
+	current->curr_loop_depth = prev_loop_depth;
+}
+
+static void continue_statement(void)
+{
+	consume(TOKEN_SEMICOLON, "Expect ';' after 'continue'.");
+	if (current->curr_loop < 0)
+		error("'continue' statement outside of loop.");
+
+	for (int i = 0; i < current->scope_depth - current->curr_loop_depth; i++)
+		end_scope();
+	emit_loop(current->curr_loop);
 }
 
 static void switch_statement(void)
@@ -845,6 +868,8 @@ static void statement(void)
 		while_statement();
 	} else if (match(TOKEN_SWITCH)) {
 		switch_statement();
+	} else if (match(TOKEN_CONTINUE)) {
+		continue_statement();
 	} else if (match(TOKEN_LEFT_BRACE)) {
 		begin_scope();
 		block();

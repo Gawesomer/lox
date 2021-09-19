@@ -149,6 +149,8 @@ static enum TokenType identifier_type(void)
 				return check_keyword(2, 2, "se", TOKEN_CASE);
 			case 'l':
 				return check_keyword(2, 3, "ass", TOKEN_CLASS);
+			case 'o':
+				return check_keyword(2, 6, "ntinue", TOKEN_CONTINUE);
 			}
 		}
 		break;
