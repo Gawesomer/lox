@@ -459,13 +459,22 @@ static void literal(bool can_assign)
 }
 
 static void ternary(bool can_assign)
-{
+{  // Condition has already been compiled.
+	int then_jump = emit_jump(OP_JUMP_IF_FALSE);
 	struct ParseRule *rule = get_rule(parser.previous.type);
 
+	emit_byte(OP_POP);  // Remove condition.
 	parse_precedence((enum Precedence)(rule->precedence));
+
+	int else_jump = emit_jump(OP_JUMP);
+
+	patch_jump(then_jump);
+	emit_byte(OP_POP);  // Remove condition.
+
 	consume(TOKEN_COLON, "Expect ':' after '?' operator.");
 	parse_precedence((enum Precedence)(rule->precedence));
-	// TODO: Compile ternary
+
+	patch_jump(else_jump);
 }
 
 static void grouping(bool can_assign)
