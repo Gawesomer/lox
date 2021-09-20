@@ -693,13 +693,19 @@ static void for_statement(void)
 		int increment_start = current_chunk()->count;
 
 		expression();
-		emit_byte(OP_POP);
+		emit_byte(OP_POP);  // Discard increment expression's value.
 		consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
 
 		emit_loop(loop_start);
+
 		loop_start = increment_start;
 		patch_jump(body_jump);
 	}
+	int prev_loop = current->curr_loop;
+	int prev_loop_depth = current->curr_loop_depth;
+
+	current->curr_loop = loop_start;
+	current->curr_loop_depth = current->scope_depth;
 
 	statement();
 	emit_loop(loop_start);
@@ -708,6 +714,9 @@ static void for_statement(void)
 		patch_jump(exit_jump);
 		emit_byte(OP_POP);  // Condition.
 	}
+
+	current->curr_loop = prev_loop;
+	current->curr_loop_depth = prev_loop_depth;
 
 	end_scope();
 }
@@ -772,8 +781,11 @@ static void continue_statement(void)
 	if (current->curr_loop < 0)
 		error("'continue' statement outside of loop.");
 
-	for (int i = 0; i < current->scope_depth - current->curr_loop_depth; i++)
-		end_scope();
+	for (int i = current->local_vars.count - 1;
+	     i >= 0 && current->local_vars.locals[i].depth > current->curr_loop_depth;
+	     i--)
+		emit_byte(OP_POP);
+
 	emit_loop(current->curr_loop);
 }
 
