@@ -57,6 +57,8 @@ struct Compiler {
 	struct LocalArray local_vars;
 	int curr_loop;
 	int curr_loop_depth;
+	int break_stmts[MAX_BREAK_COUNT];
+	int break_count;
 };
 
 struct Parser parser;
@@ -261,6 +263,7 @@ static void init_compiler(struct Compiler *compiler)
 	compiler->scope_depth = 0;
 	compiler->curr_loop = -1;
 	compiler->curr_loop_depth = 0;
+	compiler->break_count = 0;
 	current = compiler;
 }
 
@@ -751,6 +754,7 @@ static void print_statement(void)
 
 static void while_statement(void)
 {
+	int curr_break_count = current->break_count;
 	int prev_loop = current->curr_loop;
 	int prev_loop_depth = current->curr_loop_depth;
 	int loop_start = current_chunk()->count;
@@ -770,9 +774,32 @@ static void while_statement(void)
 
 	patch_jump(exit_jump);
 	emit_byte(OP_POP);
+	for (int i = curr_break_count; i < current->break_count; i++)
+		patch_jump(current->break_stmts[i]);
+	current->break_count = curr_break_count;
 
 	current->curr_loop = prev_loop;
 	current->curr_loop_depth = prev_loop_depth;
+}
+
+static void break_statement(void)
+{
+	consume(TOKEN_SEMICOLON, "Expect ';' after 'break'.");
+	if (current->curr_loop < 0)
+		error("'break' statement outside of loop.");
+	if (current->break_count >= MAX_BREAK_COUNT) {
+		error("Too many 'break' statements.");
+		return;
+	}
+
+	for (int i = current->local_vars.count - 1;
+	     i >= 0 && current->local_vars.locals[i].depth > current->curr_loop_depth;
+	     i--)
+		emit_byte(OP_POP);
+
+	int break_jump = emit_jump(OP_JUMP);
+
+	current->break_stmts[current->break_count++] = break_jump;
 }
 
 static void continue_statement(void)
@@ -880,6 +907,8 @@ static void statement(void)
 		while_statement();
 	} else if (match(TOKEN_SWITCH)) {
 		switch_statement();
+	} else if (match(TOKEN_BREAK)) {
+		break_statement();
 	} else if (match(TOKEN_CONTINUE)) {
 		continue_statement();
 	} else if (match(TOKEN_LEFT_BRACE)) {

@@ -10,5 +10,6 @@
 
 #define UINT24_COUNT (0xFFFFFF + 1)
 #define MAX_CASE_COUNT 256
+#define MAX_BREAK_COUNT 256
 
 #endif
