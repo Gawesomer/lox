@@ -57,6 +57,7 @@ struct Compiler {
 	struct LocalArray local_vars;
 	int curr_loop;
 	int curr_loop_depth;
+	bool in_switch;
 	int break_stmts[MAX_BREAK_COUNT];
 	int break_count;
 };
@@ -263,6 +264,7 @@ static void init_compiler(struct Compiler *compiler)
 	compiler->scope_depth = 0;
 	compiler->curr_loop = -1;
 	compiler->curr_loop_depth = 0;
+	compiler->in_switch = false;
 	compiler->break_count = 0;
 	current = compiler;
 }
@@ -789,8 +791,8 @@ static void while_statement(void)
 static void break_statement(void)
 {
 	consume(TOKEN_SEMICOLON, "Expect ';' after 'break'.");
-	if (current->curr_loop < 0)
-		error("'break' statement outside of loop.");
+	if (current->curr_loop < 0 && !current->in_switch)
+		error("'break' statement outside of loop or switch.");
 	if (current->break_count >= MAX_BREAK_COUNT) {
 		error("Too many 'break' statements.");
 		return;
@@ -826,28 +828,34 @@ static void switch_statement(void)
 	expression();
 	consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
 
-	int exit_jumps[MAX_CASE_COUNT];
-	int case_count = 0;
+	int prev_switch = current->in_switch;
+	int curr_break_count = current->break_count;
+
+	current->in_switch = true;
+
+	int fallthrough_jump = -1;
 
 	consume(TOKEN_LEFT_BRACE, "Expect '{' at beginning of switch body.");
 	while (match(TOKEN_CASE)) {
-		if (case_count >= MAX_CASE_COUNT) {
-			error("Too many switch-cases.");
-			return;
-		}
 		expression();
 		consume(TOKEN_COLON, "Expect ':' after switch-case.");
 
 		emit_byte(OP_CASE_EQUAL);
 		int case_jump = emit_jump(OP_JUMP_IF_FALSE);
 
-		emit_byte(OP_POP);
+		emit_byte(OP_POP);  // Remove case comparison.
+		if (fallthrough_jump != -1)
+			patch_jump(fallthrough_jump);
+
 		statement();
-		exit_jumps[case_count++] = emit_jump(OP_JUMP);
+
+		fallthrough_jump = emit_jump(OP_JUMP);
 
 		patch_jump(case_jump);
-		emit_byte(OP_POP);
+		emit_byte(OP_POP);  // Remove case comparison.
 	}
+	if (fallthrough_jump != -1)
+		patch_jump(fallthrough_jump);
 	if (match(TOKEN_DEFAULT)) {
 		consume(TOKEN_COLON, "Expect ':' after default switch-case.");
 
@@ -855,9 +863,13 @@ static void switch_statement(void)
 	}
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after switch body.");
 
-	for (int i = 0; i < case_count; i++)
-		patch_jump(exit_jumps[i]);
+	for (int i = curr_break_count; i < current->break_count; i++)
+		patch_jump(current->break_stmts[i]);
+	current->break_count = curr_break_count;
+
 	emit_byte(OP_POP);  // Remove switch value.
+
+	current->in_switch = prev_switch;
 }
 
 static void synchronize(void)
