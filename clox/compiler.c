@@ -704,6 +704,7 @@ static void for_statement(void)
 		loop_start = increment_start;
 		patch_jump(body_jump);
 	}
+	int curr_break_count = current->break_count;
 	int prev_loop = current->curr_loop;
 	int prev_loop_depth = current->curr_loop_depth;
 
@@ -717,6 +718,9 @@ static void for_statement(void)
 		patch_jump(exit_jump);
 		emit_byte(OP_POP);  // Condition.
 	}
+	for (int i = curr_break_count; i < current->break_count; i++)
+		patch_jump(current->break_stmts[i]);
+	current->break_count = curr_break_count;
 
 	current->curr_loop = prev_loop;
 	current->curr_loop_depth = prev_loop_depth;
