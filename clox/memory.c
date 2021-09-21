@@ -21,6 +21,12 @@ void *reallocate(void *pointer, size_t old_size, size_t new_size)
 void free_object(struct Obj *object)
 {
 	switch (object->type) {
+	case OBJ_FUNCTION: {
+		struct ObjFunction *function = (struct ObjFunction *)object;
+		free_chunk(&function->chunk);
+		FREE(struct ObjFunction, object);
+		break;
+	}
 	case OBJ_STRING: {
 		struct ObjString *string = (struct ObjString *)object;
 

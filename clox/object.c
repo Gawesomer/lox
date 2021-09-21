@@ -21,6 +21,16 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
+struct ObjFunction *new_function(void)
+{
+	struct ObjFunction *function = ALLOCATE_OBJ(struct ObjFunction, OBJ_FUNCTION);
+
+	function->arity = 0;
+	function->name = NULL;
+	init_chunk(&function->chunk);
+	return function;
+}
+
 struct ObjString *copy_string(const char *chars, int length)
 {
 	uint32_t hash = hash_bytes((const uint8_t *)chars, length);
@@ -65,12 +75,19 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 	return string;
 }
 
+static void print_function(struct ObjFunction *function)
+{
+	printf("<fn %s>", function->name->chars);
+}
+
 void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
-	case OBJ_STRING: {
+	case OBJ_FUNCTION:
+		print_function(AS_FUNCTION(value));
+		break;
+	case OBJ_STRING:
 		printf("%s", AS_CSTRING(value));
 		break;
-	}
 	}
 }
