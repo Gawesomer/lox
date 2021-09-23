@@ -77,6 +77,10 @@ struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b)
 
 static void print_function(struct ObjFunction *function)
 {
+	if (function->name == NULL) {
+		printf("<script>");
+		return;
+	}
 	printf("<fn %s>", function->name->chars);
 }
 

@@ -4,6 +4,6 @@
 #include "object.h"
 #include "vm.h"
 
-bool compile(const char *source, struct Chunk *chunk);
+struct ObjFunction *compile(const char *source);
 
 #endif

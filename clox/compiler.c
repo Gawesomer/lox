@@ -52,7 +52,16 @@ struct LocalArray {
 	struct Local *locals;
 };
 
+enum FunctionType {
+	TYPE_FUNCTION,
+	TYPE_SCRIPT,
+};
+
 struct Compiler {
+	struct Compiler *enclosing;
+	struct ObjFunction *function;
+	enum FunctionType type;
+
 	int scope_depth;
 	struct LocalArray local_vars;
 	int curr_loop;
@@ -64,12 +73,11 @@ struct Compiler {
 
 struct Parser parser;
 struct Compiler *current = NULL;
-struct Chunk *compiling_chunk;
 struct Table identifiers;
 
 static struct Chunk *current_chunk(void)
 {
-	return compiling_chunk;
+	return &current->function->chunk;
 }
 
 static void init_local_array(struct LocalArray *array)
@@ -197,6 +205,7 @@ static int emit_jump(uint8_t instruction)
 
 static void emit_return(void)
 {
+	emit_byte(OP_NIL);
 	emit_byte(OP_RETURN);
 }
 
@@ -258,25 +267,39 @@ static void emit_global(enum OpCode op, enum OpCode op_long, Value name)
 	make_global(op, op_long, name);
 }
 
-static void init_compiler(struct Compiler *compiler)
+static void init_compiler(struct Compiler *compiler, enum FunctionType type)
 {
+	compiler->enclosing = current;
+	compiler->function = NULL;
+	compiler->type = type;
 	init_local_array(&compiler->local_vars);
 	compiler->scope_depth = 0;
 	compiler->curr_loop = -1;
 	compiler->curr_loop_depth = 0;
 	compiler->in_switch = false;
 	compiler->break_count = 0;
+	compiler->function = new_function();
 	current = compiler;
+	if (type != TYPE_SCRIPT)
+		current->function->name = copy_string(parser.previous.start, parser.previous.length);
+
+	write_local_array(&current->local_vars, \
+			  (struct Local){.name.start = "", .name.length = 0, .depth = 0, .is_immutable = false});
 }
 
-static void end_compiler(void)
+static struct ObjFunction *end_compiler(void)
 {
 	emit_return();
 	free_local_array(&current->local_vars);
+	struct ObjFunction *function = current->function;
+
 #ifdef DEBUG_PRINT_CODE
 	if (!parser.had_error)
-		disassemble_chunk(current_chunk(), "code");
+		disassemble_chunk(current_chunk(), function->name != NULL
+				  ? function->name->chars : "<script>");
 #endif
+	current = current->enclosing;
+	return function;
 }
 
 static void begin_scope(void)
@@ -372,6 +395,8 @@ static Value parse_variable(bool is_immutable, const char *error_message)
 
 static void mark_initialized(void)
 {
+	if (current->scope_depth == 0)
+		return;
 	current->local_vars.locals[current->local_vars.count - 1].depth = current->scope_depth;
 }
 
@@ -386,6 +411,22 @@ static void define_variable(Value global, bool is_immutable)
 		table_set(&vm.global_immutables, global, NIL_VAL);
 
 	emit_global(OP_DEFINE_GLOBAL, OP_DEFINE_GLOBAL_LONG, global);
+}
+
+static uint8_t argument_list(void)
+{
+	uint8_t arg_count = 0;
+
+	if (!check(TOKEN_RIGHT_PAREN)) {
+		do {
+			expression();
+			if (arg_count == 255)
+				error("Can't have more than 255 arguments.");
+			arg_count++;
+		} while (match(TOKEN_COMMA));
+	}
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after arguments.");
+	return arg_count;
 }
 
 static void and_(bool can_assign)
@@ -439,6 +480,13 @@ static void binary(bool can_assign)
 	default:
 		return;  // Unreachable.
 	}
+}
+
+static void call(bool can_assign)
+{
+	uint8_t arg_count = argument_list();
+
+	emit_bytes(OP_CALL, arg_count);
 }
 
 static void literal(bool can_assign)
@@ -565,7 +613,7 @@ static void unary(bool can_assign)
 }
 
 struct ParseRule rules[] = {
-	[TOKEN_LEFT_PAREN]    = {grouping, NULL,    PREC_NONE},
+	[TOKEN_LEFT_PAREN]    = {grouping, call,    PREC_CALL},
 	[TOKEN_RIGHT_PAREN]   = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_LEFT_BRACE]    = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_RIGHT_BRACE]   = {NULL,     NULL,    PREC_NONE},
@@ -651,6 +699,41 @@ static void block(void)
 	}
 
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+static void function(enum FunctionType type)
+{
+	struct Compiler compiler;
+	init_compiler(&compiler, type);
+	begin_scope();
+
+	consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+	if (!check(TOKEN_RIGHT_PAREN)) {
+		do {
+			current->function->arity++;
+			if (current->function->arity > 255)
+				error_at_current("Can't have more than 255 parameters.");
+			Value param = parse_variable(false, "Expect parameter name.");
+			define_variable(param, false);
+
+		} while (match(TOKEN_COMMA));
+	}
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+	consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+	block();
+
+	struct ObjFunction *function = end_compiler();
+	int constant = add_constant(current_chunk(), OBJ_VAL(function));
+	write_constant_op(current_chunk(), OP_CONSTANT, OP_CONSTANT_LONG, constant, parser.previous.line);
+}
+
+static void fun_declaration(void)
+{
+	Value global = parse_variable(false, "Expect function name.");
+
+	mark_initialized();
+	function(TYPE_FUNCTION);
+	define_variable(global, false);
 }
 
 static void var_declaration(bool is_immutable)
@@ -909,7 +992,9 @@ static void synchronize(void)
 
 static void declaration(void)
 {
-	if (match(TOKEN_VAR))
+	if (match(TOKEN_FUN))
+		fun_declaration();
+	else if (match(TOKEN_VAR))
 		var_declaration(false);
 	else if (match(TOKEN_IMMUT))
 		var_declaration(true);
@@ -945,15 +1030,14 @@ static void statement(void)
 	}
 }
 
-bool compile(const char *source, struct Chunk *chunk)
+struct ObjFunction *compile(const char *source)
 {
 	init_scanner(source);
 	init_table(&identifiers);
 
 	struct Compiler compiler;
 
-	init_compiler(&compiler);
-	compiling_chunk = chunk;
+	init_compiler(&compiler, TYPE_SCRIPT);
 
 	parser.had_error = false;
 	parser.panic_mode = false;
@@ -963,7 +1047,7 @@ bool compile(const char *source, struct Chunk *chunk)
 	while (!match(TOKEN_EOF))
 		declaration();
 
-	end_compiler();
+	struct ObjFunction *function = end_compiler();
 	free_table(&identifiers);
-	return !parser.had_error;
+	return parser.had_error ? NULL : function;
 }
