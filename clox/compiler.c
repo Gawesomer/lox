@@ -850,6 +850,20 @@ static void print_statement(void)
 	emit_byte(OP_PRINT);
 }
 
+static void return_statement(void)
+{
+	if (current->type == TYPE_SCRIPT)
+		error("Can't return from top-level code.");
+
+	if (match(TOKEN_SEMICOLON)) {
+		emit_return();
+	} else {
+		expression();
+		consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+		emit_byte(OP_RETURN);
+	}
+}
+
 static void while_statement(void)
 {
 	int curr_break_count = current->break_count;
@@ -1013,6 +1027,8 @@ static void statement(void)
 		for_statement();
 	} else if (match(TOKEN_IF)) {
 		if_statement();
+	} else if (match(TOKEN_RETURN)) {
+		return_statement();
 	} else if (match(TOKEN_WHILE)) {
 		while_statement();
 	} else if (match(TOKEN_SWITCH)) {
