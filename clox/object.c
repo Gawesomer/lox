@@ -31,6 +31,13 @@ struct ObjFunction *new_function(void)
 	return function;
 }
 
+struct ObjNative *new_native(Value (*function)(int, Value*))
+{
+	struct ObjNative *native = ALLOCATE_OBJ(struct ObjNative, OBJ_NATIVE);
+	native->function = function;
+	return native;
+}
+
 struct ObjString *copy_string(const char *chars, int length)
 {
 	uint32_t hash = hash_bytes((const uint8_t *)chars, length);
@@ -89,6 +96,9 @@ void print_object(Value value)
 	switch (OBJ_TYPE(value)) {
 	case OBJ_FUNCTION:
 		print_function(AS_FUNCTION(value));
+		break;
+	case OBJ_NATIVE:
+		printf("<native fn>");
 		break;
 	case OBJ_STRING:
 		printf("%s", AS_CSTRING(value));

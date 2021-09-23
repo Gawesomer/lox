@@ -27,6 +27,9 @@ void free_object(struct Obj *object)
 		FREE(struct ObjFunction, object);
 		break;
 	}
+	case OBJ_NATIVE:
+		FREE(struct ObjNative, object);
+		break;
 	case OBJ_STRING: {
 		struct ObjString *string = (struct ObjString *)object;
 
