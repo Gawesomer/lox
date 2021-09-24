@@ -31,7 +31,7 @@ struct ObjFunction *new_function(void)
 	return function;
 }
 
-struct ObjNative *new_native(Value (*function)(int, Value*))
+struct ObjNative *new_native(bool (*function)(int, Value*, Value*))
 {
 	struct ObjNative *native = ALLOCATE_OBJ(struct ObjNative, OBJ_NATIVE);
 	native->function = function;

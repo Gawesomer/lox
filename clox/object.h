@@ -36,7 +36,7 @@ struct ObjFunction {
 
 struct ObjNative {
 	struct Obj obj;
-	Value (*function)(int arg_count, Value *args);
+	bool (*function)(int arg_count, Value *args, Value *result);
 };
 
 struct ObjString {
@@ -47,7 +47,7 @@ struct ObjString {
 };
 
 struct ObjFunction *new_function(void);
-struct ObjNative *new_native(Value (*function)(int, Value*));
+struct ObjNative *new_native(bool (*function)(int, Value*, Value*));
 struct ObjString *copy_string(const char *chars, int length);
 struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b);
 void print_object(Value value);

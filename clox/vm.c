@@ -13,11 +13,6 @@
 
 struct VM vm;
 
-static Value clock_native(int arg_count, Value *args)
-{
-	return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
-}
-
 static void reset_stack(void)
 {
 	vm.stack_capacity = STACK_MIN;
@@ -52,7 +47,17 @@ static void runtime_error(const char *format, ...)
 	reset_stack();
 }
 
-static void define_native(const char *name, Value (*function)(int, Value*))
+static bool clock_native(int arg_count, Value *args, Value *res)
+{
+	if (arg_count != 0) {
+		runtime_error("clock() expects 0 arguments");
+		return false;
+	}
+	*res = NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+	return true;
+}
+
+static void define_native(const char *name, bool (*function)(int, Value*, Value*))
 {
 	push(OBJ_VAL(copy_string(name, (int)strlen(name))));
 	push(OBJ_VAL(new_native(function)));
@@ -140,8 +145,11 @@ static bool call_value(Value callee, int arg_count)
 		case OBJ_FUNCTION:
 			return call(AS_FUNCTION(callee), arg_count);
 		case OBJ_NATIVE: {
-			Value (*native)(int, Value*) = AS_NATIVE(callee);
-			Value result = native(arg_count, vm.stack_top - arg_count);
+			bool (*native)(int, Value*, Value*) = AS_NATIVE(callee);
+			Value result;
+			bool ret = native(arg_count, vm.stack_top - arg_count, &result);
+			if (ret == false)
+				return false;
 			vm.stack_top -= arg_count + 1;
 			push(result);
 			return true;
