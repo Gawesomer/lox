@@ -47,20 +47,16 @@ static void runtime_error(const char *format, ...)
 	reset_stack();
 }
 
-static bool clock_native(int arg_count, Value *args, Value *res)
+static bool clock_native(Value *args, Value *res)
 {
-	if (arg_count != 0) {
-		runtime_error("clock() expects 0 arguments");
-		return false;
-	}
 	*res = NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 	return true;
 }
 
-static void define_native(const char *name, bool (*function)(int, Value*, Value*))
+static void define_native(const char *name, int arity, bool (*function)(Value*, Value*))
 {
 	push(OBJ_VAL(copy_string(name, (int)strlen(name))));
-	push(OBJ_VAL(new_native(function)));
+	push(OBJ_VAL(new_native(arity, function)));
 
 	Value index = NUMBER_VAL(vm.global_values.count);
 	write_value_array(&vm.global_values, vm.stack[1]);
@@ -79,7 +75,7 @@ void init_vm(void)
 	init_table(&vm.global_names);
 	init_value_array(&vm.global_values);
 
-	define_native("clock", clock_native);
+	define_native("clock", 0, clock_native);
 }
 
 void free_vm(void)
@@ -145,9 +141,14 @@ static bool call_value(Value callee, int arg_count)
 		case OBJ_FUNCTION:
 			return call(AS_FUNCTION(callee), arg_count);
 		case OBJ_NATIVE: {
-			bool (*native)(int, Value*, Value*) = AS_NATIVE(callee);
+			int arity = ((struct ObjNative *)AS_OBJ(callee))->arity;
+			if (arg_count != arity) {
+				runtime_error("Expected %d arguments but got %d.", arity, arg_count);
+				return false;
+			}
+			bool (*native)(Value*, Value*) = AS_NATIVE(callee);
 			Value result;
-			bool ret = native(arg_count, vm.stack_top - arg_count, &result);
+			bool ret = native(vm.stack_top - arg_count, &result);
 			if (ret == false)
 				return false;
 			vm.stack_top -= arg_count + 1;
