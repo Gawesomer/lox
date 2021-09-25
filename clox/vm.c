@@ -67,6 +67,27 @@ static bool chr_native(Value *args, Value *res)
 	return true;
 }
 
+static bool int_native(Value *args, Value *res)
+{
+	Value n = *args;
+
+	if (IS_NUMBER(n)) {
+		*res = NUMBER_VAL((int)AS_NUMBER(n));
+		return true;
+	}
+
+	if (IS_OBJ(n) && IS_STRING(n)) {
+		struct ObjString *s = AS_STRING(n);
+		if (s->length == 1) {
+			*res = NUMBER_VAL((int)s->chars[0]);
+			return true;
+		}
+	}
+
+	runtime_error("int: Argument must be a number or character.");
+	return false;
+}
+
 static void define_native(const char *name, int arity, bool (*function)(Value*, Value*))
 {
 	push(OBJ_VAL(copy_string(name, (int)strlen(name))));
@@ -91,6 +112,7 @@ void init_vm(void)
 
 	define_native("clock", 0, clock_native);
 	define_native("chr", 1, chr_native);
+	define_native("int", 1, int_native);
 }
 
 void free_vm(void)
