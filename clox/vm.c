@@ -53,6 +53,20 @@ static bool clock_native(Value *args, Value *res)
 	return true;
 }
 
+static bool chr_native(Value *args, Value *res)
+{
+	Value n = *args;
+
+	if (!IS_NUMBER(n)) {
+		runtime_error("chr: Argument must be a number.");
+		return false;
+	}
+
+	char c = AS_NUMBER(n);
+	*res = OBJ_VAL(copy_string(&c, 1));
+	return true;
+}
+
 static void define_native(const char *name, int arity, bool (*function)(Value*, Value*))
 {
 	push(OBJ_VAL(copy_string(name, (int)strlen(name))));
@@ -76,6 +90,7 @@ void init_vm(void)
 	init_value_array(&vm.global_values);
 
 	define_native("clock", 0, clock_native);
+	define_native("chr", 1, chr_native);
 }
 
 void free_vm(void)
