@@ -88,6 +88,53 @@ static bool int_native(Value *args, Value *res)
 	return false;
 }
 
+static bool readfile_native(Value *args, Value *res)
+{
+	Value n = *args;
+
+	if (!(IS_OBJ(n) && IS_STRING(n))) {
+		runtime_error("readfile: Argument must be a string.");
+		return false;
+	}
+
+	char *path = AS_CSTRING(n);
+
+	FILE *file = fopen(path, "rb");
+
+	if (file == NULL) {
+		runtime_error("readfile: Could not open file \"%s\".", path);
+		return false;
+	}
+
+	fseek(file, 0L, SEEK_END);
+	size_t file_size = ftell(file);
+
+	rewind(file);
+
+	char *buffer = (char *)malloc(file_size);
+
+	if (buffer == NULL) {
+		runtime_error("readfile: Not enough memory to read \"%s\".\n", path);
+		return false;
+	}
+
+	size_t bytes_read = fread(buffer, sizeof(char), file_size, file);
+
+	if (bytes_read < file_size) {
+		free(buffer);
+		runtime_error("readfile: Could not read file \"%s\".\n", path);
+		return false;
+	}
+
+	fclose(file);
+
+	struct ObjString *s = copy_string(buffer, file_size);
+	free(buffer);
+
+	*res = OBJ_VAL(s);
+	return true;
+}
+
 static void define_native(const char *name, int arity, bool (*function)(Value*, Value*))
 {
 	push(OBJ_VAL(copy_string(name, (int)strlen(name))));
@@ -113,6 +160,7 @@ void init_vm(void)
 	define_native("clock", 0, clock_native);
 	define_native("chr", 1, chr_native);
 	define_native("int", 1, int_native);
+	define_native("readfile", 1, readfile_native);
 }
 
 void free_vm(void)
