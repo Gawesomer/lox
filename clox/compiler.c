@@ -710,11 +710,12 @@ static void function(enum FunctionType type)
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
 	if (!check(TOKEN_RIGHT_PAREN)) {
 		do {
+			bool is_immutable = match(TOKEN_IMMUT) == true;
 			current->function->arity++;
 			if (current->function->arity > 255)
 				error_at_current("Can't have more than 255 parameters.");
-			Value param = parse_variable(false, "Expect parameter name.");
-			define_variable(param, false);
+			Value param = parse_variable(is_immutable, "Expect parameter name.");
+			define_variable(param, is_immutable);
 
 		} while (match(TOKEN_COMMA));
 	}
