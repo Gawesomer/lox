@@ -98,7 +98,6 @@ static bool readfile_native(Value *args, Value *res)
 	}
 
 	char *path = AS_CSTRING(n);
-
 	FILE *file = fopen(path, "rb");
 
 	if (file == NULL) {
@@ -135,6 +134,38 @@ static bool readfile_native(Value *args, Value *res)
 	return true;
 }
 
+static bool writefile_native(Value *args, Value *res)
+{
+	if (!(IS_OBJ(args[0]) && IS_STRING(args[0]))) {
+		runtime_error("writefile: First argument must be a string.");
+		return false;
+	} else if (!(IS_OBJ(args[1]) && IS_STRING(args[1]))) {
+		runtime_error("writefile: Second argument must be a string.");
+		return false;
+	}
+
+	char *path = AS_CSTRING(args[0]);
+	FILE *file = fopen(path, "wb");
+
+	if (file == NULL) {
+		runtime_error("writefile: Could not open file \"%s\".", path);
+		return false;
+	}
+
+	struct ObjString *s = AS_STRING(args[1]);
+	size_t bytes_written = fwrite(s->chars, sizeof(char), s->length, file);
+
+	if (bytes_written < s->length) {
+		runtime_error("writefile: Could not write file \"%s\".\n", path);
+		return false;
+	}
+
+	fclose(file);
+
+	*res = NIL_VAL;
+	return true;
+}
+
 static void define_native(const char *name, int arity, bool (*function)(Value*, Value*))
 {
 	push(OBJ_VAL(copy_string(name, (int)strlen(name))));
@@ -161,6 +192,7 @@ void init_vm(void)
 	define_native("chr", 1, chr_native);
 	define_native("int", 1, int_native);
 	define_native("readfile", 1, readfile_native);
+	define_native("writefile", 2, writefile_native);
 }
 
 void free_vm(void)
