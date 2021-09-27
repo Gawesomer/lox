@@ -21,6 +21,14 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
+struct ObjClosure *new_closure(struct ObjFunction *function)
+{
+	struct ObjClosure *closure = ALLOCATE_OBJ(struct ObjClosure, OBJ_CLOSURE);
+
+	closure->function = function;
+	return closure;
+}
+
 struct ObjFunction *new_function(void)
 {
 	struct ObjFunction *function = ALLOCATE_OBJ(struct ObjFunction, OBJ_FUNCTION);
@@ -95,6 +103,9 @@ static void print_function(struct ObjFunction *function)
 void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
+	case OBJ_CLOSURE:
+		print_function(AS_CLOSURE(value)->function);
+		break;
 	case OBJ_FUNCTION:
 		print_function(AS_FUNCTION(value));
 		break;
