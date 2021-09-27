@@ -34,7 +34,7 @@ static void runtime_error(const char *format, ...)
 
 	for (int i = vm.frame_count - 1; i >= 0; i--) {
 		struct CallFrame *frame = &vm.frames[i];
-		struct ObjFunction *function = frame->function;
+		struct ObjFunction *function = frame->closure->function;
 		size_t instruction = frame->ip - function->chunk.code - 1;
 
 		fprintf(stderr, "[line %d] in ", get_line(&function->chunk.lines, instruction));
@@ -231,10 +231,10 @@ static Value peek(int distance)
 	return vm.stack_top[-1 - distance];
 }
 
-static bool call(struct ObjFunction *function, int arg_count)
+static bool call(struct ObjClosure *closure, int arg_count)
 {
-	if (arg_count != function->arity) {
-		runtime_error("Expected %d arguments but got %d.", function->arity, arg_count);
+	if (arg_count != closure->function->arity) {
+		runtime_error("Expected %d arguments but got %d.", closure->function->arity, arg_count);
 		return false;
 	}
 
@@ -245,8 +245,8 @@ static bool call(struct ObjFunction *function, int arg_count)
 
 	struct CallFrame *frame = &vm.frames[vm.frame_count++];
 
-	frame->function = function;
-	frame->ip = function->chunk.code;
+	frame->closure = closure;
+	frame->ip = closure->function->chunk.code;
 	frame->slots = vm.stack_top - arg_count - 1;
 	return true;
 }
@@ -255,8 +255,8 @@ static bool call_value(Value callee, int arg_count)
 {
 	if (IS_OBJ(callee)) {
 		switch (OBJ_TYPE(callee)) {
-		case OBJ_FUNCTION:
-			return call(AS_FUNCTION(callee), arg_count);
+		case OBJ_CLOSURE:
+			return call(AS_CLOSURE(callee), arg_count);
 		case OBJ_NATIVE: {
 			int arity = ((struct ObjNative *)AS_OBJ(callee))->arity;
 			if (arg_count != arity) {
@@ -324,14 +324,14 @@ static Value read_constant(void)
 {
 	struct CallFrame *frame = &vm.frames[vm.frame_count - 1];
 
-	return frame->function->chunk.constants.values[read_byte()];
+	return frame->closure->function->chunk.constants.values[read_byte()];
 }
 
 static Value read_constant_long(void)
 {
 	struct CallFrame *frame = &vm.frames[vm.frame_count - 1];
 
-	return frame->function->chunk.constants.values[read_long()];
+	return frame->closure->function->chunk.constants.values[read_long()];
 }
 
 static enum InterpretResult run(void)
@@ -358,7 +358,7 @@ static enum InterpretResult run(void)
 			printf(" ]");
 		}
 		printf("\n");
-		disassemble_instruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code));
+		disassemble_instruction(&frame->closure->function->chunk, (int)(frame->ip - frame->closure->function->chunk.code));
 #endif
 		uint8_t instruction;
 		Value constant;
@@ -512,6 +512,15 @@ static enum InterpretResult run(void)
 			frame = &vm.frames[vm.frame_count - 1];
 			break;
 		}
+		case OP_CLOSURE:
+		case OP_CLOSURE_LONG: {
+			constant = (instruction == OP_CLOSURE) ? read_constant() : read_constant_long();
+			struct ObjFunction *function = AS_FUNCTION(constant);
+			struct ObjClosure *closure = new_closure(function);
+
+			push(OBJ_VAL(closure));
+			break;
+		}
 		case OP_RETURN: {
 			Value result = pop();
 			vm.frame_count--;
@@ -539,7 +548,10 @@ enum InterpretResult interpret(const char *source)
 		return INTERPRET_COMPILE_ERROR;
 
 	push(OBJ_VAL(function));
-	call(function, 0);
+	struct ObjClosure *closure = new_closure(function);
+	pop();
+	push(OBJ_VAL(closure));
+	call(closure, 0);
 
 	return run();
 }

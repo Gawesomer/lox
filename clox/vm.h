@@ -9,7 +9,7 @@
 #define STACK_MIN 256
 
 struct CallFrame {
-	struct ObjFunction *function;
+	struct ObjClosure *closure;
 	uint8_t *ip;
 	Value *slots;
 };

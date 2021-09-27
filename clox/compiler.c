@@ -725,7 +725,7 @@ static void function(enum FunctionType type)
 
 	struct ObjFunction *function = end_compiler();
 	int constant = add_constant(current_chunk(), OBJ_VAL(function));
-	write_constant_op(current_chunk(), OP_CONSTANT, OP_CONSTANT_LONG, constant, parser.previous.line);
+	write_constant_op(current_chunk(), OP_CLOSURE, OP_CLOSURE_LONG, constant, parser.previous.line);
 }
 
 static void fun_declaration(void)
