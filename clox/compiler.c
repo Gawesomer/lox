@@ -44,6 +44,7 @@ struct Local {
 	struct Token name;
 	int depth;
 	bool is_immutable;
+	bool is_captured;
 };
 
 struct Upvalue {
@@ -290,7 +291,7 @@ static void init_compiler(struct Compiler *compiler, enum FunctionType type)
 		current->function->name = copy_string(parser.previous.start, parser.previous.length);
 
 	write_local_array(&current->local_vars, \
-			  (struct Local){.name.start = "", .name.length = 0, .depth = 0, .is_immutable = false});
+			  (struct Local){.name.start = "", .name.length = 0, .depth = 0, .is_immutable = false, .is_captured = false});
 }
 
 static struct ObjFunction *end_compiler(void)
@@ -320,7 +321,10 @@ static void end_scope(void)
 	while (current->local_vars.count > 0 && \
 	       current->local_vars.locals[current->local_vars.count - 1].depth \
 			> current->scope_depth) {
-		emit_byte(OP_POP);
+		if (current->local_vars.locals[current->local_vars.count - 1].is_captured)
+			emit_byte(OP_CLOSE_UPVALUE);
+		else
+			emit_byte(OP_POP);
 		current->local_vars.count--;
 	}
 }
@@ -385,8 +389,10 @@ static int resolve_upvalue(struct Compiler *compiler, struct Token *name)
 		return -1;
 
 	int local = resolve_local(compiler->enclosing, name);
-	if (local != -1)
+	if (local != -1) {
+		compiler->enclosing->local_vars.locals[local].is_captured = true;
 		return add_upvalue(compiler, (uint8_t)local, true);
+	}
 
 	int upvalue = resolve_upvalue(compiler->enclosing, name);
 	if (upvalue != -1)
@@ -403,7 +409,7 @@ static void add_local(struct Token name, bool is_immutable)
 	}
 
 	write_local_array(&current->local_vars, \
-			  (struct Local){.name = name, .depth = -1, .is_immutable = is_immutable});
+			  (struct Local){.name = name, .depth = -1, .is_immutable = is_immutable, .is_captured = false});
 }
 
 static void declare_variable(bool is_immutable)

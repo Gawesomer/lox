@@ -207,6 +207,8 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 	}
 	case OP_CALL:
 		return byte_instruction("OP_CALL", chunk, offset);
+	case OP_CLOSE_UPVALUE:
+		return simple_instruction("OP_CLOSE_UPVALUE", offset);
 	case OP_RETURN:
 		return simple_instruction("OP_RETURN", offset);
 	default:

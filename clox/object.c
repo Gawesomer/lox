@@ -111,7 +111,9 @@ static void print_function(struct ObjFunction *function)
 struct ObjUpvalue *new_upvalue(Value *slot)
 {
 	struct ObjUpvalue *upvalue = ALLOCATE_OBJ(struct ObjUpvalue, OBJ_UPVALUE);
+	upvalue->closed = NIL_VAL;
 	upvalue->location = slot;
+	upvalue->next = NULL;
 	return upvalue;
 }
 

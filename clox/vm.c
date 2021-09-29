@@ -21,6 +21,7 @@ static void reset_stack(void)
 		exit(1);
 	vm.stack_top = vm.stack;
 	vm.frame_count = 0;
+	vm.open_upvalues = NULL;
 }
 
 static void runtime_error(const char *format, ...)
@@ -282,8 +283,36 @@ static bool call_value(Value callee, int arg_count)
 
 static struct ObjUpvalue *capture_upvalue(Value *local)
 {
+	struct ObjUpvalue *prev_upvalue = NULL;
+	struct ObjUpvalue *upvalue = vm.open_upvalues;
+
+	while (upvalue != NULL && upvalue->location > local) {
+		prev_upvalue = upvalue;
+		upvalue = upvalue->next;
+	}
+
+	if (upvalue != NULL && upvalue->location == local)
+		return upvalue;
+
 	struct ObjUpvalue *created_upvalue = new_upvalue(local);
+	created_upvalue->next = upvalue;
+
+	if (prev_upvalue == NULL)
+		vm.open_upvalues = created_upvalue;
+	else
+		prev_upvalue->next = created_upvalue;
+
 	return created_upvalue;
+}
+
+static void close_upvalues(Value *last)
+{
+	while (vm.open_upvalues != NULL && vm.open_upvalues->location >= last) {
+		struct ObjUpvalue *upvalue = vm.open_upvalues;
+		upvalue->closed = *upvalue->location;
+		upvalue->location = &upvalue->closed;
+		vm.open_upvalues = upvalue->next;
+	}
 }
 
 static bool is_falsey(Value value)
@@ -545,8 +574,13 @@ static enum InterpretResult run(void)
 			}
 			break;
 		}
+		case OP_CLOSE_UPVALUE:
+			close_upvalues(vm.stack_top - 1);
+			pop();
+			break;
 		case OP_RETURN: {
 			Value result = pop();
+			close_upvalues(frame->slots);
 			vm.frame_count--;
 			if (vm.frame_count == 0) {
 				pop();

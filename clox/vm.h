@@ -25,6 +25,7 @@ struct VM {
 	struct Table global_names;
 	struct ValueArray global_values;
 	struct Table strings;
+	struct ObjUpvalue *open_upvalues;
 	struct Obj *objects;
 };
 
