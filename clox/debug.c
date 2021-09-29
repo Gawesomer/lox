@@ -2,6 +2,7 @@
 
 #include "debug.h"
 #include "line.h"
+#include "object.h"
 #include "value.h"
 #include "vm.h"
 
@@ -149,6 +150,10 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 		return simple_instruction("OP_CASE_EQUAL", offset);
 	case OP_EQUAL:
 		return simple_instruction("OP_EQUAL", offset);
+	case OP_GET_UPVALUE:
+		return byte_instruction("OP_GET_UPVALUE", chunk, offset);
+	case OP_SET_UPVALUE:
+		return byte_instruction("OP_SET_UPVALUE", chunk, offset);
 	case OP_GREATER:
 		return simple_instruction("OP_GREATER", offset);
 	case OP_LESS:
@@ -190,6 +195,14 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 		}
 		print_value(chunk->constants.values[constant]);
 		printf("\n");
+
+		struct ObjFunction *function = AS_FUNCTION(chunk->constants.values[constant]);
+		for (int j = 0; j < function->upvalue_count; j++) {
+			int is_local = chunk->code[offset++];
+			int index = chunk->code[offset++];
+			printf("%04d      |                     %s %d\n", offset - 2, is_local ? "local" : "upvalue", index);
+		}
+
 		return offset;
 	}
 	case OP_CALL:

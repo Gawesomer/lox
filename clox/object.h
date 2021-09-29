@@ -23,6 +23,7 @@ enum ObjType {
 	OBJ_FUNCTION,
 	OBJ_NATIVE,
 	OBJ_STRING,
+	OBJ_UPVALUE,
 };
 
 struct Obj {
@@ -33,6 +34,7 @@ struct Obj {
 struct ObjFunction {
 	struct Obj obj;
 	int arity;
+	int upvalue_count;
 	struct Chunk chunk;
 	struct ObjString *name;
 };
@@ -50,9 +52,16 @@ struct ObjString {
 	char chars[];
 };
 
+struct ObjUpvalue {
+	struct Obj obj;
+	Value *location;
+};
+
 struct ObjClosure {
 	struct Obj obj;
 	struct ObjFunction *function;
+	struct ObjUpvalue **upvalues;
+	int upvalue_count;
 };
 
 struct ObjClosure *new_closure(struct ObjFunction *function);
@@ -60,6 +69,7 @@ struct ObjFunction *new_function(void);
 struct ObjNative *new_native(int arity, bool (*function)(Value*, Value*));
 struct ObjString *copy_string(const char *chars, int length);
 struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b);
+struct ObjUpvalue *new_upvalue(Value *slot);
 void print_object(Value value);
 
 static inline bool is_obj_type(Value value, enum ObjType type)

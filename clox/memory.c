@@ -22,6 +22,8 @@ void free_object(struct Obj *object)
 {
 	switch (object->type) {
 	case OBJ_CLOSURE: {
+		struct ObjClosure *closure = (struct ObjClosure *)object;
+		FREE_ARRAY(struct ObjValue*, closure->upvalues, closure->upvalue_count);
 		FREE(struct ObjClosure, object);
 		break;
 	}
@@ -38,6 +40,10 @@ void free_object(struct Obj *object)
 		struct ObjString *string = (struct ObjString *)object;
 
 		FREE_SIZE(string, FLEX_ARR_STRUCT_SIZE(struct ObjString, char, string->length + 1));
+		break;
+	}
+	case OBJ_UPVALUE: {
+		FREE(struct ObjUpvalue, object);
 		break;
 	}
 	}

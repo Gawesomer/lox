@@ -23,9 +23,16 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 
 struct ObjClosure *new_closure(struct ObjFunction *function)
 {
+	struct ObjUpvalue **upvalues = ALLOCATE(struct ObjUpvalue*, function->upvalue_count);
+
+	for (int i = 0; i < function->upvalue_count; i++)
+		upvalues[i] = NULL;
+
 	struct ObjClosure *closure = ALLOCATE_OBJ(struct ObjClosure, OBJ_CLOSURE);
 
 	closure->function = function;
+	closure->upvalues = upvalues;
+	closure->upvalue_count = function->upvalue_count;
 	return closure;
 }
 
@@ -34,6 +41,7 @@ struct ObjFunction *new_function(void)
 	struct ObjFunction *function = ALLOCATE_OBJ(struct ObjFunction, OBJ_FUNCTION);
 
 	function->arity = 0;
+	function->upvalue_count = 0;
 	function->name = NULL;
 	init_chunk(&function->chunk);
 	return function;
@@ -100,6 +108,13 @@ static void print_function(struct ObjFunction *function)
 	printf("<fn %s>", function->name->chars);
 }
 
+struct ObjUpvalue *new_upvalue(Value *slot)
+{
+	struct ObjUpvalue *upvalue = ALLOCATE_OBJ(struct ObjUpvalue, OBJ_UPVALUE);
+	upvalue->location = slot;
+	return upvalue;
+}
+
 void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
@@ -114,6 +129,9 @@ void print_object(Value value)
 		break;
 	case OBJ_STRING:
 		printf("%s", AS_CSTRING(value));
+		break;
+	case OBJ_UPVALUE:
+		printf("upvalue");
 		break;
 	}
 }

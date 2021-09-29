@@ -46,6 +46,11 @@ struct Local {
 	bool is_immutable;
 };
 
+struct Upvalue {
+	uint8_t index;
+	bool is_local;
+};
+
 struct LocalArray {
 	int count;
 	int capacity;
@@ -63,6 +68,7 @@ struct Compiler {
 	enum FunctionType type;
 
 	int scope_depth;
+	struct Upvalue upvalues[UINT8_COUNT];
 	struct LocalArray local_vars;
 	int curr_loop;
 	int curr_loop_depth;
@@ -353,6 +359,42 @@ static int resolve_local(struct Compiler *compiler, struct Token *name)
 	return -1;
 }
 
+static int add_upvalue(struct Compiler *compiler, uint8_t index, bool is_local)
+{
+	int upvalue_count = compiler->function->upvalue_count;
+
+	for (int i = 0; i < upvalue_count; i++) {
+		struct Upvalue *upvalue = &compiler->upvalues[i];
+		if (upvalue->index == index && upvalue->is_local == is_local)
+			return i;
+	}
+
+	if (upvalue_count == UINT8_COUNT) {
+		error("Too many closure variables in function.");
+		return 0;
+	}
+
+	compiler->upvalues[upvalue_count].is_local = is_local;
+	compiler->upvalues[upvalue_count].index = index;
+	return compiler->function->upvalue_count++;
+}
+
+static int resolve_upvalue(struct Compiler *compiler, struct Token *name)
+{
+	if (compiler->enclosing == NULL)
+		return -1;
+
+	int local = resolve_local(compiler->enclosing, name);
+	if (local != -1)
+		return add_upvalue(compiler, (uint8_t)local, true);
+
+	int upvalue = resolve_upvalue(compiler->enclosing, name);
+	if (upvalue != -1)
+		return add_upvalue(compiler, (uint8_t)upvalue, false);
+
+	return -1;
+}
+
 static void add_local(struct Token name, bool is_immutable)
 {
 	if (current->local_vars.count == UINT24_COUNT) {
@@ -558,32 +600,40 @@ static void string(bool can_assign)
 static void named_variable(struct Token name, bool can_assign)
 {
 	int local_index = resolve_local(current, &name);
+	int upvalue_index;
 	Value global;
 
-	if (local_index == -1)
-		global = identifier_constant(&name);
+	if (local_index == -1) {
+		upvalue_index = resolve_upvalue(current, &name);
+		if (upvalue_index == -1)
+			global = identifier_constant(&name);
+	}
 
 	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
-		if (local_index == -1) {
+		if (local_index != -1) {
+			if (current->local_vars.locals[local_index].is_immutable)
+				error("Can't assign to immutable variable.");
+			write_constant_op(current_chunk(), OP_SET_LOCAL, OP_SET_LOCAL_LONG, \
+					  local_index, parser.previous.line);
+		} else if (upvalue_index != -1) {
+			emit_bytes(OP_SET_UPVALUE, upvalue_index);
+		} else {
 			Value get_res;
 
 			if (!table_get(&vm.global_immutables, global, &get_res))
 				emit_global(OP_SET_GLOBAL, OP_SET_GLOBAL_LONG, global);
 			else
 				error("Can't assign to immutable variable.");
-		} else {
-			if (current->local_vars.locals[local_index].is_immutable)
-				error("Can't assign to immutable variable.");
-			write_constant_op(current_chunk(), OP_SET_LOCAL, OP_SET_LOCAL_LONG, \
-					  local_index, parser.previous.line);
 		}
 	} else {
-		if (local_index == -1)
-			emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, global);
-		else
+		if (local_index != -1)
 			write_constant_op(current_chunk(), OP_GET_LOCAL, OP_GET_LOCAL_LONG, \
 					  local_index, parser.previous.line);
+		else if (upvalue_index != -1)
+			emit_bytes(OP_GET_UPVALUE, upvalue_index);
+		else
+			emit_global(OP_GET_GLOBAL, OP_GET_GLOBAL_LONG, global);
 	}
 }
 
@@ -726,6 +776,11 @@ static void function(enum FunctionType type)
 	struct ObjFunction *function = end_compiler();
 	int constant = add_constant(current_chunk(), OBJ_VAL(function));
 	write_constant_op(current_chunk(), OP_CLOSURE, OP_CLOSURE_LONG, constant, parser.previous.line);
+
+	for (int i = 0; i < function->upvalue_count; i++) {
+		emit_byte(compiler.upvalues[i].is_local ? 1 : 0);
+		emit_byte(compiler.upvalues[i].index);
+	}
 }
 
 static void fun_declaration(void)

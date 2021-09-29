@@ -280,6 +280,12 @@ static bool call_value(Value callee, int arg_count)
 	return false;
 }
 
+static struct ObjUpvalue *capture_upvalue(Value *local)
+{
+	struct ObjUpvalue *created_upvalue = new_upvalue(local);
+	return created_upvalue;
+}
+
 static bool is_falsey(Value value)
 {
 	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
@@ -435,6 +441,16 @@ static enum InterpretResult run(void)
 			push(BOOL_VAL(values_equal(switch_val, case_val)));
 			break;
 		}
+		case OP_GET_UPVALUE: {
+			uint8_t slot = read_byte();
+			push(*(frame->closure->upvalues[slot]->location));
+			break;
+		}
+		case OP_SET_UPVALUE: {
+			uint8_t slot = read_byte();
+			*frame->closure->upvalues[slot]->location = peek(0);
+			break;
+		}
 		case OP_EQUAL: {
 			Value b = pop();
 			Value a = pop();
@@ -519,6 +535,14 @@ static enum InterpretResult run(void)
 			struct ObjClosure *closure = new_closure(function);
 
 			push(OBJ_VAL(closure));
+			for (int i = 0; i < closure->upvalue_count; i++) {
+				uint8_t is_local = read_byte();
+				uint8_t index = read_byte();
+				if (is_local)
+					closure->upvalues[i] = capture_upvalue(frame->slots + index);
+				else
+					closure->upvalues[i] = frame->closure->upvalues[index];
+			}
 			break;
 		}
 		case OP_RETURN: {
