@@ -76,11 +76,11 @@ struct Compiler {
 	bool in_switch;
 	int break_stmts[MAX_BREAK_COUNT];
 	int break_count;
+	struct Table identifiers;
 };
 
 struct Parser parser;
 struct Compiler *current = NULL;
-struct Table identifiers;
 
 static struct Chunk *current_chunk(void)
 {
@@ -221,11 +221,11 @@ static int make_constant(enum OpCode op, enum OpCode op_long, Value value)
 	int constant;
 	Value get_res;
 
-	if (table_get(&identifiers, value, &get_res)) {
+	if (table_get(&current->identifiers, value, &get_res)) {
 		constant = AS_NUMBER(get_res);
 	} else {
 		constant = add_constant(current_chunk(), value);
-		table_set(&identifiers, value, NUMBER_VAL(constant));
+		table_set(&current->identifiers, value, NUMBER_VAL(constant));
 	}
 	write_constant_op(current_chunk(), op, op_long, constant, parser.previous.line);
 
@@ -285,6 +285,7 @@ static void init_compiler(struct Compiler *compiler, enum FunctionType type)
 	compiler->curr_loop_depth = 0;
 	compiler->in_switch = false;
 	compiler->break_count = 0;
+	init_table(&compiler->identifiers);
 	compiler->function = new_function();
 	current = compiler;
 	if (type != TYPE_SCRIPT)
@@ -298,6 +299,7 @@ static struct ObjFunction *end_compiler(void)
 {
 	emit_return();
 	free_local_array(&current->local_vars);
+	free_table(&current->identifiers);
 	struct ObjFunction *function = current->function;
 
 #ifdef DEBUG_PRINT_CODE
@@ -1111,7 +1113,6 @@ static void statement(void)
 struct ObjFunction *compile(const char *source)
 {
 	init_scanner(source);
-	init_table(&identifiers);
 
 	struct Compiler compiler;
 
@@ -1126,6 +1127,5 @@ struct ObjFunction *compile(const char *source)
 		declaration();
 
 	struct ObjFunction *function = end_compiler();
-	free_table(&identifiers);
 	return parser.had_error ? NULL : function;
 }
