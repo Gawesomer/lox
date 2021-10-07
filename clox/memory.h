@@ -25,6 +25,7 @@
 	(sizeof(struct_type) + sizeof(arr_type) * (count))
 
 void *reallocate(void *pointer, size_t old_size, size_t new_size);
+void collect_garbage(void);
 void free_objects(void);
 
 #endif

@@ -18,6 +18,11 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 
 	object->next = vm.objects;
 	vm.objects = object;
+
+#ifdef DEBUG_LOG_GC
+	printf("%p allocate %zu for %d\n", (void*)object, size, type);
+#endif
+
 	return object;
 }
 
