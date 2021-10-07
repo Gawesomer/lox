@@ -371,7 +371,7 @@ static Value read_constant_long(void)
 
 static enum InterpretResult run(void)
 {
-		struct CallFrame *frame = &vm.frames[vm.frame_count - 1];
+	struct CallFrame *frame = &vm.frames[vm.frame_count - 1];
 
 #define BINARY_OP(value_type,  op) \
 	do { \
