@@ -827,11 +827,14 @@ static void expression_statement(void)
 
 static void for_statement(void)
 {
+	int loop_var_index = -1;  // Used for closures capturing the loop variable
+
 	begin_scope();
 	consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
 	if (match(TOKEN_SEMICOLON)) {
 		// No initializer.
 	} else if (match(TOKEN_VAR)) {
+		loop_var_index = current->local_vars.count;
 		var_declaration(false);
 	} else {
 		expression_statement();
@@ -869,7 +872,30 @@ static void for_statement(void)
 	current->curr_loop = loop_start;
 	current->curr_loop_depth = current->scope_depth;
 
+	if (loop_var_index != -1) {
+		// Declare hidden variable shadowing the loop variable
+		// initialized to the same value
+		begin_scope();
+		add_local(current->local_vars.locals[loop_var_index].name, \
+			  current->local_vars.locals[loop_var_index].is_immutable);
+		mark_initialized();
+		write_constant_op(current_chunk(), OP_GET_LOCAL, OP_GET_LOCAL_LONG, \
+				  loop_var_index, parser.previous.line);
+	}
+
+	// loop body
 	statement();
+
+	if (loop_var_index != -1) {
+		// Set loop variable to value of hidden loop variable
+		// The hidden loop variable will be at the top of the stack already
+		// because the only way new variables might be declared above it,
+		// would be within a block, whose scope would have ended by now.
+		write_constant_op(current_chunk(), OP_SET_LOCAL, OP_SET_LOCAL_LONG, \
+				  loop_var_index, parser.previous.line);
+		end_scope();
+	}
+
 	emit_loop(loop_start);
 
 	if (exit_jump != -1) {
