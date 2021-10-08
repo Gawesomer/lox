@@ -21,8 +21,8 @@ struct VM {
 	Value *stack;
 	Value *stack_top;
 	int stack_capacity;
-	struct Table global_immutables;
-	struct Table global_names;
+	struct Table global_immutables;  // Set(name)
+	struct Table global_names;  // Dict(name: index)
 	struct ValueArray global_values;
 	struct Table strings;
 	struct ObjUpvalue *open_upvalues;

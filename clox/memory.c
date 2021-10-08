@@ -28,6 +28,24 @@ void *reallocate(void *pointer, size_t old_size, size_t new_size)
 
 }
 
+void mark_object(struct Obj *object)
+{
+	if (object == NULL)
+		return;
+#ifdef DEBUG_LOG_GC
+	printf("%p mark ", (void*)object);
+	print_value(OBJ_VAL(object));
+	printf("\n");
+#endif
+	object->is_marked = true;
+}
+
+void mark_value(Value value)
+{
+	if (IS_OBJ(value))
+		mark_object(AS_OBJ(value));
+}
+
 void free_object(struct Obj *object)
 {
 #ifdef DEBUG_LOG_GC
@@ -62,11 +80,32 @@ void free_object(struct Obj *object)
 	}
 }
 
+static void mark_globals(void)
+{
+	for (int i = 0; i < vm.global_names.count; i++) {
+		struct Entry entry = vm.global_names.entries[i];
+		int global_index = AS_NUMBER(entry.value);
+		mark_object(AS_OBJ(vm.global_values.values[global_index]));
+		mark_value(entry.key);
+	}
+}
+
+static void mark_roots(void)
+{
+	for (Value *slot = vm.stack; slot < vm.stack_top; slot++) {
+		mark_value(*slot);
+	}
+
+	mark_globals();
+}
+
 void collect_garbage(void)
 {
 #ifdef DEBUG_LOG_GC
 	printf("-- gc begin\n");
 #endif
+
+	mark_roots();
 
 #ifdef DEBUG_LOG_GC
 	printf("-- gc end\n");
