@@ -184,6 +184,11 @@ void init_vm(void)
 {
 	reset_stack();
 	vm.objects = NULL;
+
+	vm.gray_count = 0;
+	vm.gray_capacity = 0;
+	vm.gray_stack = NULL;
+
 	init_table(&vm.strings);
 	init_table(&vm.global_immutables);
 	init_table(&vm.global_names);

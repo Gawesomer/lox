@@ -27,6 +27,9 @@ struct VM {
 	struct Table strings;
 	struct ObjUpvalue *open_upvalues;
 	struct Obj *objects;
+	int gray_count;
+	int gray_capacity;
+	struct Obj **gray_stack;
 };
 
 enum InterpretResult {
