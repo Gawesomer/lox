@@ -5,5 +5,6 @@
 #include "vm.h"
 
 struct ObjFunction *compile(const char *source);
+void mark_compiler_roots(void);
 
 #endif

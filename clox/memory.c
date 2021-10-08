@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include "compiler.h"
 #include "memory.h"
 #include "vm.h"
 
@@ -96,7 +97,16 @@ static void mark_roots(void)
 		mark_value(*slot);
 	}
 
+	for (int i = 0; i < vm.frame_count; i++) {
+		mark_object((struct Obj*)vm.frames[i].closure);
+	}
+
+	for (struct ObjUpvalue *upvalue = vm.open_upvalues; upvalue != NULL; upvalue = upvalue->next) {
+		mark_object((struct Obj*)upvalue);
+	}
+
 	mark_globals();
+	mark_compiler_roots();
 }
 
 void collect_garbage(void)

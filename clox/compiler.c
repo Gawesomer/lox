@@ -1155,3 +1155,13 @@ struct ObjFunction *compile(const char *source)
 	struct ObjFunction *function = end_compiler();
 	return parser.had_error ? NULL : function;
 }
+
+void mark_compiler_roots(void)
+{
+	struct Compiler *compiler = current;
+
+	while (compiler != NULL) {
+		mark_object((struct Obj*)compiler->function);
+		compiler = compiler->enclosing;
+	}
+}
