@@ -166,6 +166,28 @@ static void trace_references(void)
 	}
 }
 
+static void sweep(void)
+{
+	struct Obj *previous = NULL;
+	struct Obj *object = vm.objects;
+
+	while (object != NULL) {
+		if (object->is_marked) {
+			object->is_marked = false;
+			previous = object;
+			object = object->next;
+		} else {
+			struct Obj *unreached = object;
+			object = object->next;
+			if (previous != NULL)
+				previous->next = object;
+			else
+				vm.objects = object;
+			free_object(unreached);
+		}
+	}
+}
+
 void collect_garbage(void)
 {
 #ifdef DEBUG_LOG_GC
@@ -174,6 +196,7 @@ void collect_garbage(void)
 
 	mark_roots();
 	trace_references();
+	sweep();
 
 #ifdef DEBUG_LOG_GC
 	printf("-- gc end\n");
