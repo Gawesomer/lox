@@ -70,7 +70,7 @@ static void blacken_object(struct Obj *object)
 #ifdef DEBUG_LOG_GC
 	printf("%p blacken ", (void*)object);
 	print_value(OBJ_VAL(object));
-	printf("/n");
+	printf("\n");
 #endif
 
 	switch (object->type) {
@@ -196,6 +196,7 @@ void collect_garbage(void)
 
 	mark_roots();
 	trace_references();
+	table_remove_white(&vm.strings);
 	sweep();
 
 #ifdef DEBUG_LOG_GC

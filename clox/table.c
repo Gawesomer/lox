@@ -187,3 +187,12 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 		index = (index + 1) % table->capacity;
 	}
 }
+
+void table_remove_white(struct Table *table)
+{
+	for (int i = 0; i < table->capacity; i++) {
+		struct Entry *entry = &table->entries[i];
+		if (IS_OBJ(entry->key) && !(AS_OBJ(entry->key))->is_marked)
+			table_delete(table, entry->key);
+	}
+}
