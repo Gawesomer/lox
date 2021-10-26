@@ -26,6 +26,8 @@ struct VM {
 	struct ValueArray global_values;
 	struct Table strings;
 	struct ObjUpvalue *open_upvalues;
+	size_t bytes_allocated;
+	size_t next_gc;
 	struct Obj *objects;
 	int gray_count;
 	int gray_capacity;
