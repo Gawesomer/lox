@@ -2,6 +2,7 @@
 
 #include "chunk.h"
 #include "memory.h"
+#include "vm.h"
 
 void init_chunk(struct Chunk *chunk)
 {
@@ -36,7 +37,9 @@ void write_chunk(struct Chunk *chunk, uint8_t byte, int line)
 
 int add_constant(struct Chunk *chunk, Value value)
 {
+	push(value);
 	write_value_array(&chunk->constants, value);
+	pop();
 	return chunk->constants.count - 1;
 }
 

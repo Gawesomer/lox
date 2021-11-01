@@ -188,6 +188,15 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 	}
 }
 
+void mark_table(struct Table *table)
+{
+	for (int i = 0; i < table->capacity; i++) {
+		struct Entry *entry = &table->entries[i];
+		mark_value(entry->key);
+		mark_value(entry->value);
+	}
+}
+
 void table_remove_white(struct Table *table)
 {
 	for (int i = 0; i < table->capacity; i++) {

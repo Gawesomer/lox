@@ -23,6 +23,7 @@ bool table_set(struct Table *table, Value key, Value value);
 bool table_delete(struct Table *table, Value key);
 void table_add_all(struct Table *from, struct Table *to);
 struct ObjString *table_find_string(struct Table *table, const char *chars, int length, uint32_t hash);
+void mark_table(struct Table *table);
 void table_remove_white(struct Table *table);
 
 #endif

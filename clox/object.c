@@ -76,7 +76,11 @@ struct ObjString *copy_string(const char *chars, int length)
 	string->chars[length] = '\0';
 	string->length = length;
 	string->hash = hash;
-	table_set(&vm.strings, OBJ_VAL(string), NIL_VAL);
+
+	Value string_value = OBJ_VAL(string);
+	push(string_value);
+	table_set(&vm.strings, string_value, NIL_VAL);
+	pop();
 	return string;
 }
 

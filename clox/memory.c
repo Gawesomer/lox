@@ -139,11 +139,9 @@ void free_object(struct Obj *object)
 
 static void mark_globals(void)
 {
+	mark_table(&vm.global_names);
 	for (int i = 0; i < vm.global_names.count; i++) {
-		struct Entry entry = vm.global_names.entries[i];
-		int global_index = AS_NUMBER(entry.value);
-		mark_object(AS_OBJ(vm.global_values.values[global_index]));
-		mark_value(entry.key);
+		mark_object(AS_OBJ(vm.global_values.values[i]));
 	}
 }
 
