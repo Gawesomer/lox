@@ -27,6 +27,13 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
+struct ObjClass *new_class(struct ObjString *name)
+{
+	struct ObjClass *klass = ALLOCATE_OBJ(struct ObjClass, OBJ_CLASS);
+	klass->name = name;
+	return klass;
+}
+
 struct ObjClosure *new_closure(struct ObjFunction *function)
 {
 	struct ObjUpvalue **upvalues = ALLOCATE(struct ObjUpvalue*, function->upvalue_count);
@@ -130,6 +137,9 @@ struct ObjUpvalue *new_upvalue(Value *slot)
 void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
+	case OBJ_CLASS:
+		printf("%s", AS_CLASS(value)->name->chars);
+		break;
 	case OBJ_CLOSURE:
 		print_function(AS_CLOSURE(value)->function);
 		break;

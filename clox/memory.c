@@ -81,6 +81,11 @@ static void blacken_object(struct Obj *object)
 #endif
 
 	switch (object->type) {
+	case OBJ_CLASS: {
+		struct ObjClass *klass = (struct ObjClass*)object;
+		mark_object((struct Obj*)klass->name);
+		break;
+	}
 	case OBJ_CLOSURE: {
 		struct ObjClosure *closure = (struct ObjClosure*)object;
 		mark_object((struct Obj*)closure->function);
@@ -109,6 +114,10 @@ void free_object(struct Obj *object)
 	printf("%p free type %d\n", (void*)object, object->type);
 #endif
 	switch (object->type) {
+	case OBJ_CLASS: {
+		FREE(struct ObjClass, object);
+		break;
+	}
 	case OBJ_CLOSURE: {
 		struct ObjClosure *closure = (struct ObjClosure *)object;
 		FREE_ARRAY(struct ObjValue*, closure->upvalues, closure->upvalue_count);
