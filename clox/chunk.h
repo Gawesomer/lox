@@ -43,6 +43,8 @@ enum OpCode {
 	OP_CALL,
 	OP_CLOSE_UPVALUE,
 	OP_RETURN,
+	OP_CLASS,
+	OP_CLASS_LONG,
 };
 
 struct Chunk {

@@ -599,6 +599,12 @@ static enum InterpretResult run(void)
 			frame = &vm.frames[vm.frame_count - 1];
 			break;
 		}
+		case OP_CLASS:
+		case OP_CLASS_LONG: {
+			constant = (instruction == OP_CLASS) ? read_constant() : read_constant_long();
+			push(OBJ_VAL(new_class(AS_STRING(constant))));
+			break;
+		}
 		}
 	}
 

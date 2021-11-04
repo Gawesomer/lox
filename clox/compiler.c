@@ -759,6 +759,17 @@ static void block(void)
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
+static void class_declaration(void)
+{
+	Value name = parse_variable(false, "Expect class name.");
+
+	emit_constant(OP_CLASS, OP_CLASS_LONG, name);
+	define_variable(name, false);
+
+	consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+	consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+}
+
 static void function(enum FunctionType type)
 {
 	struct Compiler compiler;
@@ -1096,7 +1107,9 @@ static void synchronize(void)
 
 static void declaration(void)
 {
-	if (match(TOKEN_FUN))
+	if (match(TOKEN_CLASS))
+		class_declaration();
+	else if (match(TOKEN_FUN))
 		fun_declaration();
 	else if (match(TOKEN_VAR))
 		var_declaration(false);
