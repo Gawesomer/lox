@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "chunk.h"
+#include "table.h"
 #include "value.h"
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
@@ -10,12 +11,14 @@
 #define IS_CLASS(value)    is_obj_type(value, OBJ_CLASS)
 #define IS_CLOSURE(value)  is_obj_type(value, OBJ_CLOSURE)
 #define IS_FUNCTION(value) is_obj_type(value, OBJ_FUNCTION)
+#define IS_INSTANCE(value) is_obj_type(value, OBJ_INSTANCE)
 #define IS_NATIVE(value)   is_obj_type(value, OBJ_NATIVE)
 #define IS_STRING(value)   is_obj_type(value, OBJ_STRING)
 
 #define AS_CLASS(value)    ((struct ObjClass*)AS_OBJ(value))
 #define AS_CLOSURE(value)  ((struct ObjClosure*)AS_OBJ(value))
 #define AS_FUNCTION(value) ((struct ObjFunction*)AS_OBJ(value))
+#define AS_INSTANCE(value) ((struct ObjInstance*)AS_OBJ(value))
 #define AS_NATIVE(value)   (((struct ObjNative*)AS_OBJ(value))->function)
 #define AS_STRING(value)   ((struct ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)  ((char*)AS_STRING(value)->chars)
@@ -24,6 +27,7 @@ enum ObjType {
 	OBJ_CLASS,
 	OBJ_CLOSURE,
 	OBJ_FUNCTION,
+	OBJ_INSTANCE,
 	OBJ_NATIVE,
 	OBJ_STRING,
 	OBJ_UPVALUE,
@@ -75,9 +79,16 @@ struct ObjClass {
 	struct ObjString *name;
 };
 
+struct ObjInstance {
+	struct Obj obj;
+	struct ObjClass *klass;
+	struct Table fields;
+};
+
 struct ObjClass *new_class(struct ObjString *name);
 struct ObjClosure *new_closure(struct ObjFunction *function);
 struct ObjFunction *new_function(void);
+struct ObjInstance *new_instance(struct ObjClass *klass);
 struct ObjNative *new_native(int arity, bool (*function)(Value*, Value*));
 struct ObjString *copy_string(const char *chars, int length);
 struct ObjString *concat_strings(struct ObjString *a, struct ObjString *b);

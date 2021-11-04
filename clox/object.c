@@ -60,6 +60,14 @@ struct ObjFunction *new_function(void)
 	return function;
 }
 
+struct ObjInstance *new_instance(struct ObjClass *klass)
+{
+	struct ObjInstance *instance = ALLOCATE_OBJ(struct ObjInstance, OBJ_INSTANCE);
+	instance->klass = klass;
+	init_table(&instance->fields);
+	return instance;
+}
+
 struct ObjNative *new_native(int arity, bool (*function)(Value*, Value*))
 {
 	struct ObjNative *native = ALLOCATE_OBJ(struct ObjNative, OBJ_NATIVE);
@@ -145,6 +153,9 @@ void print_object(Value value)
 		break;
 	case OBJ_FUNCTION:
 		print_function(AS_FUNCTION(value));
+		break;
+	case OBJ_INSTANCE:
+		printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
 		break;
 	case OBJ_NATIVE:
 		printf("<native fn>");
