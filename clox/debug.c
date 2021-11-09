@@ -146,6 +146,14 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 		return global_instruction("OP_SET_GLOBAL", chunk, offset);
 	case OP_SET_GLOBAL_LONG:
 		return global_long_instruction("OP_SET_GLOBAL_LONG", chunk, offset);
+	case OP_GET_PROPERTY:
+		return constant_instruction("OP_GET_PROPERTY", chunk, offset);
+	case OP_GET_PROPERTY_LONG:
+		return constant_long_instruction("OP_GET_PROPERTY_LONG", chunk, offset);
+	case OP_SET_PROPERTY:
+		return constant_instruction("OP_SET_PROPERTY", chunk, offset);
+	case OP_SET_PROPERTY_LONG:
+		return constant_long_instruction("OP_SET_PROPERTY_LONG", chunk, offset);
 	case OP_CASE_EQUAL:
 		return simple_instruction("OP_CASE_EQUAL", offset);
 	case OP_EQUAL:

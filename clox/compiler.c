@@ -539,6 +539,19 @@ static void call(bool can_assign)
 	emit_bytes(OP_CALL, arg_count);
 }
 
+static void dot(bool can_assign)
+{
+	consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
+	Value name = identifier_constant(&parser.previous);
+
+	if (can_assign && match(TOKEN_EQUAL)) {
+		expression();
+		emit_constant(OP_SET_PROPERTY, OP_SET_PROPERTY_LONG, name);
+	} else {
+		emit_constant(OP_GET_PROPERTY, OP_GET_PROPERTY_LONG, name);
+	}
+}
+
 static void literal(bool can_assign)
 {
 	switch (parser.previous.type) {
@@ -680,7 +693,7 @@ struct ParseRule rules[] = {
 	[TOKEN_STAR]          = {NULL,     binary,  PREC_FACTOR},
 	[TOKEN_SLASH]         = {NULL,     binary,  PREC_FACTOR},
 	[TOKEN_COMMA]         = {NULL,     NULL,    PREC_NONE},
-	[TOKEN_DOT]           = {NULL,     NULL,    PREC_NONE},
+	[TOKEN_DOT]           = {NULL,     dot,     PREC_CALL},
 	[TOKEN_EROTEME]       = {NULL,     ternary, PREC_TERNARY},
 	[TOKEN_SEMICOLON]     = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_COLON]         = {NULL,     NULL,    PREC_NONE},

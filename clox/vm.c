@@ -475,6 +475,42 @@ static enum InterpretResult run(void)
 			vm.global_values.values[index] = peek(0);
 			break;
 		}
+		case OP_GET_PROPERTY:
+		case OP_GET_PROPERTY_LONG: {
+			if (!IS_INSTANCE(peek(0))) {
+				runtime_error("Only instance have properties.");
+				return INTERPRET_RUNTIME_ERROR;
+			}
+
+			constant = (instruction == OP_GET_PROPERTY) ? read_constant() : read_constant_long();
+			struct ObjString *name = AS_STRING(constant);
+			struct ObjInstance *instance = AS_INSTANCE(peek(0));
+			Value value;
+
+			if (table_get(&instance->fields, constant, &value)) {
+				pop(); // Instance
+				push(value);
+				break;
+			}
+
+			runtime_error("Undefined property '%s'.", name->chars);
+			return INTERPRET_RUNTIME_ERROR;
+		}
+		case OP_SET_PROPERTY:
+		case OP_SET_PROPERTY_LONG: {
+			if (!IS_INSTANCE(peek(1))) {
+				runtime_error("Only instances have fields.");
+				return INTERPRET_RUNTIME_ERROR;
+			}
+
+			constant = (instruction == OP_SET_PROPERTY) ? read_constant() : read_constant_long();
+			struct ObjInstance *instance = AS_INSTANCE(peek(1));
+			table_set(&instance->fields, constant, peek(0));
+			Value value = pop();
+			pop();
+			push(value);
+			break;
+		}
 		case OP_CASE_EQUAL: {
 			Value case_val = pop();
 			Value switch_val = peek(0);
