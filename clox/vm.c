@@ -68,6 +68,23 @@ static bool chr_native(Value *args, Value *res)
 	return true;
 }
 
+static bool hasattr_native(Value *args, Value *res)
+{
+	if (!(IS_OBJ(args[0]) && IS_INSTANCE(args[0]))) {
+		runtime_error("hasattr: First argument must be an instance.");
+		return false;
+	} else if (!(IS_OBJ(args[1]) && IS_STRING(args[1]))) {
+		runtime_error("hasattr: Second argument must be a string.");
+		return false;
+	}
+
+	struct ObjInstance *instance = AS_INSTANCE(args[0]);
+	Value value;
+
+	*res =  BOOL_VAL(table_get(&instance->fields, args[1], &value));
+	return true;
+}
+
 static bool int_native(Value *args, Value *res)
 {
 	Value n = *args;
@@ -198,6 +215,7 @@ void init_vm(void)
 
 	define_native("clock", 0, clock_native);
 	define_native("chr", 1, chr_native);
+	define_native("hasattr", 2, hasattr_native);
 	define_native("int", 1, int_native);
 	define_native("readfile", 1, readfile_native);
 	define_native("writefile", 2, writefile_native);
