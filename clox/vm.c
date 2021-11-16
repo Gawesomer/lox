@@ -68,6 +68,22 @@ static bool chr_native(Value *args, Value *res)
 	return true;
 }
 
+static bool delattr_native(Value *args, Value *res)
+{
+	if (!(IS_OBJ(args[0]) && IS_INSTANCE(args[0]))) {
+		runtime_error("delattr: First argument must be an instance.");
+		return false;
+	} else if (!(IS_OBJ(args[1]) && IS_STRING(args[1]))) {
+		runtime_error("delattr: Second argument must be a string.");
+		return false;
+	}
+
+	struct ObjInstance *instance = AS_INSTANCE(args[0]);
+
+	*res = BOOL_VAL(table_delete(&instance->fields, args[1]));
+	return true;
+}
+
 static bool hasattr_native(Value *args, Value *res)
 {
 	if (!(IS_OBJ(args[0]) && IS_INSTANCE(args[0]))) {
@@ -255,6 +271,7 @@ void init_vm(void)
 	define_native("clock", 0, clock_native);
 	define_native("chr", 1, chr_native);
 	define_native("hasattr", 2, hasattr_native);
+	define_native("delattr", 2, delattr_native);
 	define_native("getattr", 2, getattr_native);
 	define_native("setattr", 3, setattr_native);
 	define_native("int", 1, int_native);
