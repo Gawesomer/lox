@@ -403,6 +403,14 @@ static void close_upvalues(Value *last)
 	}
 }
 
+static void define_method(Value name)
+{
+	Value method = peek(0);
+	struct ObjClass *klass = AS_CLASS(peek(1));
+	table_set(&klass->methods, name, method);
+	pop(); // Pop off the class
+}
+
 static bool is_falsey(Value value)
 {
 	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
@@ -720,6 +728,12 @@ static enum InterpretResult run(void)
 		case OP_CLASS_LONG: {
 			constant = (instruction == OP_CLASS) ? read_constant() : read_constant_long();
 			push(OBJ_VAL(new_class(AS_STRING(constant))));
+			break;
+		}
+		case OP_METHOD:
+		case OP_METHOD_LONG: {
+			constant = (instruction == OP_METHOD) ? read_constant() : read_constant_long();
+			define_method(constant);
 			break;
 		}
 		}

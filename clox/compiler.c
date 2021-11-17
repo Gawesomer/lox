@@ -772,17 +772,6 @@ static void block(void)
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
-static void class_declaration(void)
-{
-	Value name = parse_variable(false, "Expect class name.");
-
-	emit_constant(OP_CLASS, OP_CLASS_LONG, name);
-	define_variable(name, false);
-
-	consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
-	consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
-}
-
 static void function(enum FunctionType type)
 {
 	struct Compiler compiler;
@@ -813,6 +802,32 @@ static void function(enum FunctionType type)
 		emit_byte(compiler.upvalues[i].is_local ? 1 : 0);
 		emit_byte(compiler.upvalues[i].index);
 	}
+}
+
+static void method(void)
+{
+	consume(TOKEN_IDENTIFIER, "Expect method name.");
+	Value name = identifier_constant(&parser.previous);
+
+	enum FunctionType type = TYPE_FUNCTION;
+	function(type);
+	emit_constant(OP_METHOD, OP_METHOD_LONG, name);
+}
+
+static void class_declaration(void)
+{
+	Value name = parse_variable(false, "Expect class name.");
+	struct Token class_name = parser.previous;
+
+	emit_constant(OP_CLASS, OP_CLASS_LONG, name);
+	define_variable(name, false);
+
+	named_variable(class_name, false);
+	consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF))
+		method();
+	consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+	emit_byte(OP_POP); // Pop off the class
 }
 
 static void fun_declaration(void)
