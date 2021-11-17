@@ -30,6 +30,7 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 struct ObjClass *new_class(struct ObjString *name)
 {
 	struct ObjClass *klass = ALLOCATE_OBJ(struct ObjClass, OBJ_CLASS);
+	init_table(&klass->methods);
 	klass->name = name;
 	return klass;
 }

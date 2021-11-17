@@ -84,6 +84,7 @@ static void blacken_object(struct Obj *object)
 	case OBJ_CLASS: {
 		struct ObjClass *klass = (struct ObjClass*)object;
 		mark_object((struct Obj*)klass->name);
+		mark_table(&klass->methods);
 		break;
 	}
 	case OBJ_CLOSURE: {
@@ -121,6 +122,8 @@ void free_object(struct Obj *object)
 #endif
 	switch (object->type) {
 	case OBJ_CLASS: {
+		struct ObjClass *klass = (struct ObjClass*)object;
+		free_table(&klass->methods);
 		FREE(struct ObjClass, object);
 		break;
 	}

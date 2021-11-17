@@ -77,6 +77,7 @@ struct ObjClosure {
 struct ObjClass {
 	struct Obj obj;
 	struct ObjString *name;
+	struct Table methods;
 };
 
 struct ObjInstance {
