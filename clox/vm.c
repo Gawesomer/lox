@@ -369,6 +369,22 @@ static bool call_value(Value callee, int arg_count)
 	return false;
 }
 
+static bool bind_method(struct ObjClass *klass, Value name)
+{
+	Value method;
+
+	if (!table_get(&klass->methods, name, &method)) {
+		runtime_error("Undefined property '%s'.", AS_CSTRING(name));
+		return false;
+	}
+
+	struct ObjBoundMethod *bound = new_bound_method(peek(0), AS_CLOSURE(method));
+
+	pop();
+	push(OBJ_VAL(bound));
+	return true;
+}
+
 static struct ObjUpvalue *capture_upvalue(Value *local)
 {
 	struct ObjUpvalue *prev_upvalue = NULL;
@@ -567,7 +583,6 @@ static enum InterpretResult run(void)
 			}
 
 			constant = (instruction == OP_GET_PROPERTY) ? read_constant() : read_constant_long();
-			struct ObjString *name = AS_STRING(constant);
 			struct ObjInstance *instance = AS_INSTANCE(peek(0));
 			Value value;
 
@@ -577,8 +592,10 @@ static enum InterpretResult run(void)
 				break;
 			}
 
-			runtime_error("Undefined property '%s'.", name->chars);
-			return INTERPRET_RUNTIME_ERROR;
+			if (!bind_method(instance->klass, constant)) {
+				return INTERPRET_RUNTIME_ERROR;
+			}
+			break;
 		}
 		case OP_SET_PROPERTY:
 		case OP_SET_PROPERTY_LONG: {
