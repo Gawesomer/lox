@@ -27,6 +27,15 @@ static struct Obj *allocate_object(size_t size, enum ObjType type)
 	return object;
 }
 
+struct ObjBoundMethod *new_bound_method(Value receiver, struct ObjClosure *method)
+{
+	struct ObjBoundMethod *bound = ALLOCATE_OBJ(struct ObjBoundMethod, OBJ_BOUND_METHOD);
+
+	bound->receiver = receiver;
+	bound->method = method;
+	return bound;
+}
+
 struct ObjClass *new_class(struct ObjString *name)
 {
 	struct ObjClass *klass = ALLOCATE_OBJ(struct ObjClass, OBJ_CLASS);
@@ -146,6 +155,9 @@ struct ObjUpvalue *new_upvalue(Value *slot)
 void print_object(Value value)
 {
 	switch (OBJ_TYPE(value)) {
+	case OBJ_BOUND_METHOD:
+		print_function(AS_BOUND_METHOD(value)->method->function);
+		break;
 	case OBJ_CLASS:
 		printf("%s", AS_CLASS(value)->name->chars);
 		break;

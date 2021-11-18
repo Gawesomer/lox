@@ -81,6 +81,12 @@ static void blacken_object(struct Obj *object)
 #endif
 
 	switch (object->type) {
+	case OBJ_BOUND_METHOD: {
+		struct ObjBoundMethod *bound = (struct ObjBoundMethod*)object;
+		mark_value(bound->receiver);
+		mark_object((struct Obj*)bound->method);
+		break;
+	}
 	case OBJ_CLASS: {
 		struct ObjClass *klass = (struct ObjClass*)object;
 		mark_object((struct Obj*)klass->name);
@@ -121,6 +127,9 @@ void free_object(struct Obj *object)
 	printf("%p free type %d\n", (void*)object, object->type);
 #endif
 	switch (object->type) {
+	case OBJ_BOUND_METHOD:
+		FREE(struct ObjBoundMethod, object);
+		break;
 	case OBJ_CLASS: {
 		struct ObjClass *klass = (struct ObjClass*)object;
 		free_table(&klass->methods);
