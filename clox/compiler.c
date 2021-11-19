@@ -60,6 +60,7 @@ struct LocalArray {
 
 enum FunctionType {
 	TYPE_FUNCTION,
+	TYPE_METHOD,
 	TYPE_SCRIPT,
 };
 
@@ -79,8 +80,13 @@ struct Compiler {
 	struct Table identifiers;
 };
 
+struct ClassCompiler {
+	struct ClassCompiler *enclosing;
+};
+
 struct Parser parser;
 struct Compiler *current = NULL;
+struct ClassCompiler *current_class = NULL;
 
 static struct Chunk *current_chunk(void)
 {
@@ -291,8 +297,12 @@ static void init_compiler(struct Compiler *compiler, enum FunctionType type)
 	if (type != TYPE_SCRIPT)
 		current->function->name = copy_string(parser.previous.start, parser.previous.length);
 
-	write_local_array(&current->local_vars, \
-			  (struct Local){.name.start = "", .name.length = 0, .depth = 0, .is_immutable = false, .is_captured = false});
+	struct Local local = {.name.start = "", .name.length = 0, .depth = 0, .is_immutable = false, .is_captured = false};
+	if (type != TYPE_FUNCTION) {
+		local.name.start = "this";
+		local.name.length = 4;
+	}
+	write_local_array(&current->local_vars, local);
 }
 
 static struct ObjFunction *end_compiler(void)
@@ -663,6 +673,16 @@ static void variable(bool can_assign)
 	named_variable(parser.previous, can_assign);
 }
 
+static void this_(bool can_assign)
+{
+	if (current_class == NULL) {
+		error("Can't use 'this' outside of a class.");
+		return;
+	}
+
+	variable(false);
+}
+
 static void unary(bool can_assign)
 {
 	enum TokenType operator_type = parser.previous.type;
@@ -720,7 +740,7 @@ struct ParseRule rules[] = {
 	[TOKEN_PRINT]         = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_RETURN]        = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_SUPER]         = {NULL,     NULL,    PREC_NONE},
-	[TOKEN_THIS]          = {NULL,     NULL,    PREC_NONE},
+	[TOKEN_THIS]          = {this_,     NULL,    PREC_NONE},
 	[TOKEN_TRUE]          = {literal,  NULL,    PREC_NONE},
 	[TOKEN_VAR]           = {NULL,     NULL,    PREC_NONE},
 	[TOKEN_WHILE]         = {NULL,     NULL,    PREC_NONE},
@@ -809,7 +829,7 @@ static void method(void)
 	consume(TOKEN_IDENTIFIER, "Expect method name.");
 	Value name = identifier_constant(&parser.previous);
 
-	enum FunctionType type = TYPE_FUNCTION;
+	enum FunctionType type = TYPE_METHOD;
 	function(type);
 	emit_constant(OP_METHOD, OP_METHOD_LONG, name);
 }
@@ -822,12 +842,18 @@ static void class_declaration(void)
 	emit_constant(OP_CLASS, OP_CLASS_LONG, name);
 	define_variable(name, false);
 
+	struct ClassCompiler class_compiler;
+	class_compiler.enclosing = current_class;
+	current_class = &class_compiler;
+
 	named_variable(class_name, false);
 	consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
 	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF))
 		method();
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
 	emit_byte(OP_POP); // Pop off the class
+
+	current_class = current_class->enclosing;
 }
 
 static void fun_declaration(void)
