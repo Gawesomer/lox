@@ -25,6 +25,7 @@ struct VM {
 	struct Table global_names;  // Dict(name: index)
 	struct ValueArray global_values;
 	struct Table strings;
+	Value init_string;
 	struct ObjUpvalue *open_upvalues;
 	size_t bytes_allocated;
 	size_t next_gc;

@@ -264,6 +264,8 @@ void init_vm(void)
 	vm.gray_stack = NULL;
 
 	init_table(&vm.strings);
+	vm.init_string = NIL_VAL;
+	vm.init_string = OBJ_VAL(copy_string("init", 4));
 	init_table(&vm.global_immutables);
 	init_table(&vm.global_names);
 	init_value_array(&vm.global_values);
@@ -286,6 +288,7 @@ void free_vm(void)
 	free_table(&vm.global_immutables);
 	free_table(&vm.strings);
 	FREE_ARRAY(Value, vm.stack, vm.stack_capacity);
+	vm.init_string = NIL_VAL;
 	free_objects();
 }
 
@@ -347,6 +350,13 @@ static bool call_value(Value callee, int arg_count)
 		case OBJ_CLASS: {
 			struct ObjClass *klass = AS_CLASS(callee);
 			vm.stack_top[-arg_count - 1] = OBJ_VAL(new_instance(klass));
+			Value initializer;
+			if (table_get(&klass->methods, vm.init_string, &initializer)) {
+				return call(AS_CLOSURE(initializer), arg_count);
+			} else if (arg_count != 0) {
+				runtime_error("Expected 0 arguments but got %d.", arg_count);
+				return false;
+			}
 			return true;
 		}
 		case OBJ_CLOSURE:
