@@ -384,6 +384,29 @@ static bool call_value(Value callee, int arg_count)
 	return false;
 }
 
+static bool invoke_from_class(struct ObjClass *klass, Value name, int arg_count)
+{
+	Value method;
+	if (!table_get(&klass->methods, name, &method)) {
+		runtime_error("Undefined property '%s'.", AS_CSTRING(name));
+		return false;
+	}
+	return call(AS_CLOSURE(method), arg_count);
+}
+
+static bool invoke(Value name, int arg_count)
+{
+	Value receiver = peek(arg_count);
+
+	if (!IS_INSTANCE(receiver)) {
+		runtime_error("Only instances have methods.");
+		return false;
+	}
+
+	struct ObjInstance *instance = AS_INSTANCE(receiver);
+	return invoke_from_class(instance->klass, name, arg_count);
+}
+
 static bool bind_method(struct ObjClass *klass, Value name)
 {
 	Value method;
@@ -718,6 +741,16 @@ static enum InterpretResult run(void)
 
 			if (!call_value(peek(arg_count), arg_count))
 				return INTERPRET_RUNTIME_ERROR;
+			frame = &vm.frames[vm.frame_count - 1];
+			break;
+		}
+		case OP_INVOKE:
+		case OP_INVOKE_LONG: {
+			constant = (instruction == OP_INVOKE) ? read_constant() : read_constant_long();
+			int arg_count = read_byte();
+			if (!invoke(constant, arg_count)) {
+				return INTERPRET_RUNTIME_ERROR;
+			}
 			frame = &vm.frames[vm.frame_count - 1];
 			break;
 		}

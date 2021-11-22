@@ -561,6 +561,10 @@ static void dot(bool can_assign)
 	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
 		emit_constant(OP_SET_PROPERTY, OP_SET_PROPERTY_LONG, name);
+	} else if (match(TOKEN_LEFT_PAREN)) {
+		uint8_t arg_count = argument_list();
+		emit_constant(OP_INVOKE, OP_INVOKE_LONG, name);
+		emit_byte(arg_count);
 	} else {
 		emit_constant(OP_GET_PROPERTY, OP_GET_PROPERTY_LONG, name);
 	}
