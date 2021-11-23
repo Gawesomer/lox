@@ -404,6 +404,13 @@ static bool invoke(Value name, int arg_count)
 	}
 
 	struct ObjInstance *instance = AS_INSTANCE(receiver);
+
+	Value value;
+	if (table_get(&instance->fields, name, &value)) {
+		vm.stack_top[-arg_count - 1] = value;
+		return call_value(value, arg_count);
+	}
+
 	return invoke_from_class(instance->klass, name, arg_count);
 }
 
