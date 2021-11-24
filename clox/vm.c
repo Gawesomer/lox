@@ -802,6 +802,13 @@ static enum InterpretResult run(void)
 			push(OBJ_VAL(new_class(AS_STRING(constant))));
 			break;
 		}
+		case OP_INHERIT: {
+			Value superclass = peek(1);
+			struct ObjClass *subclass = AS_CLASS(peek(0));
+			table_add_all(&AS_CLASS(superclass)->methods, &subclass->methods);
+			pop(); // Subclass.
+			break;
+		}
 		case OP_METHOD:
 		case OP_METHOD_LONG: {
 			constant = (instruction == OP_METHOD) ? read_constant() : read_constant_long();

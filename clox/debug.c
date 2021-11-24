@@ -253,6 +253,8 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 		return constant_instruction("OP_CLASS", chunk, offset);
 	case OP_CLASS_LONG:
 		return constant_long_instruction("OP_CLASS_LONG", chunk, offset);
+	case OP_INHERIT:
+		return simple_instruction("OP_INHERIT", offset);
 	case OP_METHOD:
 		return constant_instruction("OP_METHOD", chunk, offset);
 	case OP_METHOD_LONG:
