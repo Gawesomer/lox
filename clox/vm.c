@@ -804,6 +804,10 @@ static enum InterpretResult run(void)
 		}
 		case OP_INHERIT: {
 			Value superclass = peek(1);
+			if (!IS_CLASS(superclass)) {
+				runtime_error("Superclass must be a class.");
+				return INTERPRET_RUNTIME_ERROR;
+			}
 			struct ObjClass *subclass = AS_CLASS(peek(0));
 			table_add_all(&AS_CLASS(superclass)->methods, &subclass->methods);
 			pop(); // Subclass.
