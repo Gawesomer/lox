@@ -702,8 +702,15 @@ static void super_(bool can_assign)
 	Value name = identifier_constant(&parser.previous);
 
 	named_variable(synthetic_token("this"), false);
-	named_variable(synthetic_token("super"), false);
-	emit_constant(OP_GET_SUPER, OP_GET_SUPER_LONG, name);
+	if (match(TOKEN_LEFT_PAREN)) {
+		uint8_t arg_count = argument_list();
+		named_variable(synthetic_token("super"), false);
+		emit_constant(OP_SUPER_INVOKE, OP_SUPER_INVOKE_LONG, name);
+		emit_byte(arg_count);
+	} else {
+		named_variable(synthetic_token("super"), false);
+		emit_constant(OP_GET_SUPER, OP_GET_SUPER_LONG, name);
+	}
 }
 
 static void this_(bool can_assign)

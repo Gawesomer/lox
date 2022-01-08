@@ -770,6 +770,16 @@ static enum InterpretResult run(void)
 			frame = &vm.frames[vm.frame_count - 1];
 			break;
 		}
+		case OP_SUPER_INVOKE:
+		case OP_SUPER_INVOKE_LONG: {
+			constant = (instruction == OP_SUPER_INVOKE) ? read_constant() : read_constant_long();
+			int arg_count = read_byte();
+			struct ObjClass *superclass = AS_CLASS(pop());
+			if (!invoke_from_class(superclass, constant, arg_count))
+				return INTERPRET_RUNTIME_ERROR;
+			frame = &vm.frames[vm.frame_count-1];
+			break;
+		}
 		case OP_CLOSURE:
 		case OP_CLOSURE_LONG: {
 			constant = (instruction == OP_CLOSURE) ? read_constant() : read_constant_long();

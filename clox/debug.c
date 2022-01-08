@@ -249,6 +249,10 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 		return invoke_instruction("OP_INVOKE", chunk, offset);
 	case OP_INVOKE_LONG:
 		return invoke_long_instruction("OP_INVOKE_LONG", chunk, offset);
+	case OP_SUPER_INVOKE:
+		return invoke_instruction("OP_SUPER_INVOKE", chunk, offset);
+	case OP_SUPER_INVOKE_LONG:
+		return invoke_long_instruction("OP_SUPER_INVOKE_LONG", chunk, offset);
 	case OP_CLOSE_UPVALUE:
 		return simple_instruction("OP_CLOSE_UPVALUE", offset);
 	case OP_RETURN:
