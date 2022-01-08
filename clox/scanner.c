@@ -120,6 +120,8 @@ static struct Token skip_whitespace(void)
 				// Conume the "*/".
 				advance();
 				advance();
+			} else {
+				return make_token(TOKEN_WHITESPACE);
 			}
 			break;
 		default:
