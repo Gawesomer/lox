@@ -657,6 +657,15 @@ static enum InterpretResult run(void)
 			push(value);
 			break;
 		}
+		case OP_GET_SUPER:
+		case OP_GET_SUPER_LONG: {
+			constant = (instruction == OP_GET_SUPER) ? read_constant() : read_constant_long();
+			struct ObjClass *superclass = AS_CLASS(pop());
+
+			if (!bind_method(superclass, constant))
+				return INTERPRET_RUNTIME_ERROR;
+			break;
+		}
 		case OP_CASE_EQUAL: {
 			Value case_val = pop();
 			Value switch_val = peek(0);

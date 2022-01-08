@@ -180,6 +180,10 @@ int disassemble_instruction(struct Chunk *chunk, int offset)
 		return constant_instruction("OP_SET_PROPERTY", chunk, offset);
 	case OP_SET_PROPERTY_LONG:
 		return constant_long_instruction("OP_SET_PROPERTY_LONG", chunk, offset);
+	case OP_GET_SUPER:
+		return constant_instruction("OP_GET_SUPER", chunk, offset);
+	case OP_GET_SUPER_LONG:
+		return constant_long_instruction("OP_GET_SUPER_LONG", chunk, offset);
 	case OP_CASE_EQUAL:
 		return simple_instruction("OP_CASE_EQUAL", offset);
 	case OP_EQUAL:
