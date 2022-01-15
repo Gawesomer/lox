@@ -1,7 +1,7 @@
-CC	 = gcc
-CFLAGS	 = -g -ggdb3 -O0 -g
+CC	     = gcc
+CFLAGS	 = -g -ggdb3 -O0 -pg
 CPPFLAGS = -Wall -pedantic
-
+LDFLAGS  = -pg # Profiling reference: http://web.archive.org/web/20141129061523/http://www.cs.utah.edu/dept/old/texinfo/as/gprof.html#SEC2
 ARFLAGS  = rvu
 
 .PHONEY: all clean
