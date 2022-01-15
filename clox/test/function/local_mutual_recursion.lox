@@ -1,0 +1,13 @@
+{
+  fun isEven(n) {
+    if (n == 0) return true;
+    return isOdd(n - 1); // expect: Undefined variable.
+  } // expect: [line 4] in isEven()
+
+  fun isOdd(n) {
+    if (n == 0) return false;
+    return isEven(n - 1);
+  }
+
+  isEven(4);
+} // expect: [line 12] in script

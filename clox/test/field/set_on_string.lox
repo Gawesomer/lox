@@ -1,0 +1,2 @@
+"str".foo = "value"; // expect: Only instances have fields.
+// expect: [line 1] in script

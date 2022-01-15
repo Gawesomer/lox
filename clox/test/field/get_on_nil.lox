@@ -1,0 +1,2 @@
+nil.foo; // expect: Only instances have properties.
+// expect: [line 1] in script

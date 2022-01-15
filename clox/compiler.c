@@ -559,6 +559,7 @@ static void dot(bool can_assign)
 	consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
 	Value name = identifier_constant(&parser.previous);
 
+	push(name);
 	if (can_assign && match(TOKEN_EQUAL)) {
 		expression();
 		emit_constant(OP_SET_PROPERTY, OP_SET_PROPERTY_LONG, name);
@@ -569,6 +570,7 @@ static void dot(bool can_assign)
 	} else {
 		emit_constant(OP_GET_PROPERTY, OP_GET_PROPERTY_LONG, name);
 	}
+	pop();
 }
 
 static void literal(bool can_assign)
@@ -868,12 +870,14 @@ static void method(void)
 {
 	consume(TOKEN_IDENTIFIER, "Expect method name.");
 	Value name = identifier_constant(&parser.previous);
+	push(name);
 
 	enum FunctionType type = TYPE_METHOD;
 	if (parser.previous.length == 4 && memcmp(parser.previous.start, "init", 4) == 0)
 		type = TYPE_INITIALIZER;
 	function(type);
 	emit_constant(OP_METHOD, OP_METHOD_LONG, name);
+	pop();
 }
 
 static void class_declaration(void)
@@ -935,10 +939,13 @@ static void var_declaration(bool is_immutable)
 	if (current->scope_depth == 0 && table_get(&vm.global_immutables, name, &get_res))
 		error("Cannot redefine immutable variable.");
 
-	if (match(TOKEN_EQUAL))
+	if (match(TOKEN_EQUAL)) {
+		push(name);
 		expression();
-	else
+		pop();
+	} else {
 		emit_byte(OP_NIL);
+	}
 
 	consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
 

@@ -1,0 +1,15 @@
+class Base {
+  foo(a, b) {
+    print "Base.foo(" + a + ", " + b + ")";
+  }
+}
+
+class Derived < Base {
+  foo() {
+    print "Derived.foo()";
+    super.foo("a", "b", "c", "d"); // expect: Expected 2 arguments but got 4.
+  } // expect: [line 10] in foo()
+}
+
+Derived().foo(); // expect: [line 14] in script
+// expect: Derived.foo()

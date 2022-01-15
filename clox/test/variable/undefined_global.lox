@@ -1,0 +1,2 @@
+print notDefined;  // expect: Undefined variable.
+// expect: [line 1] in script

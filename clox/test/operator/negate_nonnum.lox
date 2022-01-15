@@ -1,0 +1,2 @@
+-"s"; // expect: Operand must be a number.
+// expect: [line 1] in script

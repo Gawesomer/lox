@@ -623,7 +623,7 @@ static enum InterpretResult run(void)
 		case OP_GET_PROPERTY:
 		case OP_GET_PROPERTY_LONG: {
 			if (!IS_INSTANCE(peek(0))) {
-				runtime_error("Only instance have properties.");
+				runtime_error("Only instances have properties.");
 				return INTERPRET_RUNTIME_ERROR;
 			}
 
