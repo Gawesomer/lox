@@ -33,6 +33,19 @@ uint32_t hash_bytes(const uint8_t *bytes, size_t size)
 
 static uint32_t hash_value(Value value)
 {
+#ifdef NAN_BOXING
+	if (IS_BOOL(value))
+		return AS_BOOL(value) ? 3 : 5;
+	else if (IS_NIL(value))
+		return hash_bytes(NULL, 0);
+	else if (IS_NUMBER(value)) {
+		const uint8_t v = AS_NUMBER(value);
+		return hash_bytes(&v, sizeof(double));
+	} else if (IS_OBJ(value))
+		return AS_STRING(value)->hash;
+	else
+		return 0;
+#else
 	switch (value.type) {
 	case VAL_BOOL:
 		return AS_BOOL(value) ? 3 : 5;
@@ -45,6 +58,7 @@ static uint32_t hash_value(Value value)
 	default:  // Unreachable.
 		return 0;
 	}
+#endif
 }
 
 static struct Entry *find_entry(struct Entry *entries, int capacity, Value key)
