@@ -49,7 +49,7 @@ static uint32_t hash_value(Value value)
 
 static struct Entry *find_entry(struct Entry *entries, int capacity, Value key)
 {
-	uint32_t index = hash_value(key) % capacity;
+	uint32_t index = hash_value(key) & (capacity - 1); // Fast mod power of two
 	struct Entry *tombstone = NULL;
 
 	for (;;) {
@@ -69,7 +69,7 @@ static struct Entry *find_entry(struct Entry *entries, int capacity, Value key)
 			return entry;
 		}
 
-		index = (index + 1) % capacity;
+		index = (index + 1) & (capacity - 1);
 	}
 }
 
@@ -166,7 +166,7 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 	if (table->count == 0)
 		return NULL;
 
-	uint32_t index = hash % table->capacity;
+	uint32_t index = hash & (table->capacity - 1);
 
 	for (;;) {
 		struct Entry *entry = &table->entries[index];
@@ -184,7 +184,7 @@ struct ObjString *table_find_string(struct Table *table, const char *chars, int 
 			}
 		}
 
-		index = (index + 1) % table->capacity;
+		index = (index + 1) & (table->capacity - 1);
 	}
 }
 
